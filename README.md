@@ -27,7 +27,7 @@
 
 ## 2. 기획 배경
 
-| <img src="readme_images/HANAinPLAN_기획배경1.png" width="350"/> | <img src="readme_images/HANAinPLAN_기획배경2.png" width="350"/> |
+| <img src="/readme_images/HANAinPLAN_기획배경1.png" width="350"/> | <img src="/readme_images/HANAinPLAN_기획배경2.png" width="350"/> |
 |:--:|:--:|
 
 **은퇴자는 늘고, 창구는 줄어들다.**  
