@@ -24,3 +24,7 @@ public class FundNavUpdateRequest {
     @NotNull(message = "기준가는 필수입니다")
     private BigDecimal nav;
 }
+
+
+
+
