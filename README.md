@@ -105,11 +105,11 @@ IRP(개인형 퇴직연금) 가입자 수는 꾸준히 증가하며 새엑공제
 |:--:|:--:|:--:|
 **이름**|주소영|<img src="readme_images/주소영_증명.jpg" width="150"/>|
 **연락처**|이메일|soyong6624@gmail.com|
-**전공**|경제학|졸업(2024.02.22)|
-**Skill set**|Language|Java, Python, Typescript, HTML, CSS
+**학력**|중앙대학교 경제학부|졸업(2024.02.22)|
+**Skill set**|Language|Java, Python, Typescript, Javascript
 ||Framework&Tool|React.js, Next.js, Spring, JSP, FastAPI|
 ||Database|Oracle, MySQL|
-||ETC|Git, AWS, Docker, Scikit-Learn, Pandas|
+||ETC|Git, AWS, Docker, Scikit-Learn, Pandas, Figma, SPSS|
 |**자격증**|빅데이터분석기사|한국데이터산업진흥원(2025.07.11)|
 ||SQLD|한국데이터산업진흥원(2024.06.21)|
 ||ADsP|한국데이터산업진흥원(2024.06.07)|
