@@ -1,4 +1,7 @@
-import { axiosInstance } from '../lib/axiosInstance';
+import { httpGet, httpPost, httpPatch, httpDelete } from '../lib/http';
+
+const BASE_URL = '/v1/irp-integration';
+const BANKING_BASE_URL = '/banking';
 
 export interface IrpAccountOpenRequest {
   customerId: number;
@@ -58,8 +61,7 @@ export interface IrpAccountStatusResponse {
 
 export const openIrpAccount = async (request: IrpAccountOpenRequest): Promise<IrpAccountOpenResponse> => {
   try {
-    const response = await axiosInstance.post<IrpAccountOpenResponse>('/v1/irp-integration/accounts/open', request);
-    return response.data;
+    return await httpPost<IrpAccountOpenResponse>(`${BASE_URL}/accounts/open`, request);
   } catch (error) {
     throw error;
   }
@@ -67,8 +69,7 @@ export const openIrpAccount = async (request: IrpAccountOpenRequest): Promise<Ir
 
 export const getIrpAccount = async (customerId: number): Promise<IrpAccountInfo> => {
   try {
-    const response = await axiosInstance.get<IrpAccountInfo>(`/v1/irp-integration/accounts/customer/${customerId}`);
-    return response.data;
+    return await httpGet<IrpAccountInfo>(`${BASE_URL}/accounts/customer/${customerId}`);
   } catch (error) {
     throw error;
   }
@@ -76,8 +77,7 @@ export const getIrpAccount = async (customerId: number): Promise<IrpAccountInfo>
 
 export const checkIrpAccountStatus = async (customerId: number): Promise<IrpAccountStatusResponse> => {
   try {
-    const response = await axiosInstance.get<IrpAccountStatusResponse>(`/v1/irp-integration/accounts/check/${customerId}`);
-    return response.data;
+    return await httpGet<IrpAccountStatusResponse>(`${BASE_URL}/accounts/check/${customerId}`);
   } catch (error) {
     throw error;
   }
@@ -85,8 +85,7 @@ export const checkIrpAccountStatus = async (customerId: number): Promise<IrpAcco
 
 export const syncIrpAccountWithHanaInPlan = async (customerId: number): Promise<{ syncSuccess: boolean; message: string }> => {
   try {
-    const response = await axiosInstance.post<{ syncSuccess: boolean; message: string }>(`/v1/irp-integration/sync/customer/${customerId}`);
-    return response.data;
+    return await httpPost<{ syncSuccess: boolean; message: string }>(`${BASE_URL}/sync/customer/${customerId}`);
   } catch (error) {
     throw error;
   }
@@ -94,8 +93,7 @@ export const syncIrpAccountWithHanaInPlan = async (customerId: number): Promise<
 
 export const closeIrpAccount = async (accountNumber: string): Promise<{ accountNumber: string; message: string }> => {
   try {
-    const response = await axiosInstance.delete<{ accountNumber: string; message: string }>(`/v1/irp/close/${accountNumber}`);
-    return response.data;
+    return await httpDelete<{ accountNumber: string; message: string }>(`/v1/irp/close/${accountNumber}`);
   } catch (error) {
     throw error;
   }
@@ -122,8 +120,7 @@ export interface DepositProduct {
 
 export const getAllInterestRates = async (): Promise<InterestRateInfo[]> => {
   try {
-    const response = await axiosInstance.get<InterestRateInfo[]>('/banking/interest-rates/all');
-    return response.data;
+    return await httpGet<InterestRateInfo[]>(`${BANKING_BASE_URL}/interest-rates/all`);
   } catch (error) {
     throw error;
   }
@@ -162,8 +159,7 @@ export interface DepositSubscriptionRequest {
 
 export const getAllDepositProducts = async (): Promise<{ success: boolean; count: number; products: DepositProduct[] }> => {
   try {
-    const response = await axiosInstance.get('/banking/deposit-products');
-    return response.data;
+    return await httpGet<{ success: boolean; count: number; products: DepositProduct[] }>(`${BANKING_BASE_URL}/deposit-products`);
   } catch (error) {
     throw error;
   }
@@ -171,8 +167,7 @@ export const getAllDepositProducts = async (): Promise<{ success: boolean; count
 
 export const getDepositProductsByBank = async (bankCode: string): Promise<{ success: boolean; bankCode: string; count: number; products: DepositProduct[] }> => {
   try {
-    const response = await axiosInstance.get(`/banking/deposit-products/bank/${bankCode}`);
-    return response.data;
+    return await httpGet<{ success: boolean; bankCode: string; count: number; products: DepositProduct[] }>(`${BANKING_BASE_URL}/deposit-products/bank/${bankCode}`);
   } catch (error) {
     throw error;
   }
@@ -186,8 +181,7 @@ export interface DepositRecommendationRequest {
 
 export const getOptimalDepositRecommendation = async (request: DepositRecommendationRequest): Promise<{ success: boolean; message: string; recommendation: OptimalDepositRecommendation }> => {
   try {
-    const response = await axiosInstance.post('/banking/deposit-products/recommend', request);
-    return response.data;
+    return await httpPost<{ success: boolean; message: string; recommendation: OptimalDepositRecommendation }>(`${BANKING_BASE_URL}/deposit-products/recommend`, request);
   } catch (error) {
     throw error;
   }
@@ -195,8 +189,7 @@ export const getOptimalDepositRecommendation = async (request: DepositRecommenda
 
 export const subscribeDeposit = async (request: DepositSubscriptionRequest): Promise<any> => {
   try {
-    const response = await axiosInstance.post('/banking/deposit/subscribe', request);
-    return response.data;
+    return await httpPost<any>(`${BANKING_BASE_URL}/deposit/subscribe`, request);
   } catch (error) {
     throw error;
   }

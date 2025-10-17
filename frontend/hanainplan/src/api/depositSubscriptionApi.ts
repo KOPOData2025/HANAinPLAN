@@ -1,4 +1,6 @@
-import { axiosInstance } from '../lib/axiosInstance';
+import { httpPost } from '../lib/http';
+
+const BASE_URL = '/banking';
 
 export interface CreateDepositAccountRequest {
   userId: number;
@@ -52,11 +54,9 @@ export interface AccountDto {
 }
 
 export const createDepositAccount = async (request: CreateDepositAccountRequest): Promise<AccountDto> => {
-  const response = await axiosInstance.post('/banking', request);
-  return response.data;
+  return await httpPost<AccountDto>(BASE_URL, request);
 };
 
 export const subscribeDepositProduct = async (request: DepositSubscribeRequest): Promise<DepositSubscribeResponse> => {
-  const response = await axiosInstance.post('/banking/deposit/subscribe', request);
-  return response.data;
+  return await httpPost<DepositSubscribeResponse>(`${BASE_URL}/deposit/subscribe`, request);
 };

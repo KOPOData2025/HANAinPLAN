@@ -1,4 +1,4 @@
-import { httpGet, httpPost } from '../lib/http';
+import { httpGet, httpPost, httpPatch, httpDelete } from '../lib/http';
 
 export interface IndustryData {
   industryCode: string;
@@ -269,35 +269,15 @@ export const getUserInfo = async (userId: number): Promise<UserInfoResponse> => 
 };
 
 export const updateUserInfo = async (userId: number, updateData: UserInfoUpdateRequest): Promise<UserInfoResponse> => {
-  const response = await fetch(`/api/user/info/${userId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(updateData),
-  });
-  return await response.json();
+  return await httpPatch<UserInfoResponse>(`user/info/${userId}`, updateData);
 };
 
 export const changePassword = async (userId: number, passwordData: PasswordChangeRequest): Promise<{success: boolean; message: string}> => {
-  const response = await fetch(`/api/user/password/${userId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(passwordData),
-  });
-  return await response.json();
+  return await httpPatch<{success: boolean; message: string}>(`user/password/${userId}`, passwordData);
 };
 
 export const deleteAccount = async (userId: number, password: string): Promise<{success: boolean; message: string}> => {
-  const response = await fetch(`/api/user/account/${userId}?password=${encodeURIComponent(password)}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  return await response.json();
+  return await httpDelete<{success: boolean; message: string}>(`user/account/${userId}`, { password });
 };
 
 export interface AccountInfo {

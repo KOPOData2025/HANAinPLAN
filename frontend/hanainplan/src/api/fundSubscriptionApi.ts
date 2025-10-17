@@ -1,4 +1,6 @@
-import { axiosInstance } from '../lib/axiosInstance';
+import { httpGet, httpPost } from '../lib/http';
+
+const BASE_URL = '/banking';
 
 export interface FundPurchaseRequest {
   userId: number;
@@ -43,16 +45,13 @@ export interface FundPortfolio {
 }
 
 export const purchaseFund = async (request: FundPurchaseRequest): Promise<FundPurchaseResponse> => {
-  const response = await axiosInstance.post('/banking/fund-subscription/purchase', request);
-  return response.data;
+  return await httpPost<FundPurchaseResponse>(`${BASE_URL}/fund-subscription/purchase`, request);
 };
 
 export const redeemFund = async (request: FundRedemptionRequest): Promise<FundRedemptionResponse> => {
-  const response = await axiosInstance.post('/banking/fund-subscription/redeem', request);
-  return response.data;
+  return await httpPost<FundRedemptionResponse>(`${BASE_URL}/fund-subscription/redeem`, request);
 };
 
 export const getActiveFundSubscriptions = async (userId: number): Promise<FundPortfolio[]> => {
-  const response = await axiosInstance.get(`/banking/fund-subscription/user/${userId}/active`);
-  return response.data;
+  return await httpGet<FundPortfolio[]>(`${BASE_URL}/fund-subscription/user/${userId}/active`);
 };

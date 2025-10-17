@@ -1,6 +1,6 @@
-import axios from 'axios';
+import { httpGet, httpPost, httpPatch } from '../lib/http';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = '/consultations';
 
 export interface ConsultationRequest {
   customerId: number;
@@ -30,12 +30,12 @@ export interface ConsultationResponse {
 
 export const createConsultation = async (request: ConsultationRequest): Promise<ConsultationResponse> => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/consultations`, request);
-
-    if (response.data.success) {
-      return response.data.consultation;
+    const response = await httpPost<{ success: boolean; consultation: ConsultationResponse; message?: string }>(BASE_URL, request);
+    
+    if (response.success) {
+      return response.consultation;
     } else {
-      throw new Error(response.data.message || '상담 신청에 실패했습니다.');
+      throw new Error(response.message || '상담 신청에 실패했습니다.');
     }
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || '상담 신청에 실패했습니다.');
@@ -44,8 +44,7 @@ export const createConsultation = async (request: ConsultationRequest): Promise<
 
 export const getCustomerConsultations = async (customerId: number): Promise<ConsultationResponse[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/consultations/customer/${customerId}`);
-    return response.data;
+    return await httpGet<ConsultationResponse[]>(`${BASE_URL}/customer/${customerId}`);
   } catch (error) {
     throw error;
   }
@@ -53,8 +52,7 @@ export const getCustomerConsultations = async (customerId: number): Promise<Cons
 
 export const getConsultantConsultations = async (consultantId: number): Promise<ConsultationResponse[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/consultations/consultant/${consultantId}`);
-    return response.data;
+    return await httpGet<ConsultationResponse[]>(`${BASE_URL}/consultant/${consultantId}`);
   } catch (error) {
     throw error;
   }
@@ -62,8 +60,7 @@ export const getConsultantConsultations = async (consultantId: number): Promise<
 
 export const getTodayConsultations = async (consultantId: number): Promise<ConsultationResponse[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/consultations/consultant/${consultantId}/today`);
-    return response.data;
+    return await httpGet<ConsultationResponse[]>(`${BASE_URL}/consultant/${consultantId}/today`);
   } catch (error) {
     throw error;
   }
@@ -71,8 +68,7 @@ export const getTodayConsultations = async (consultantId: number): Promise<Consu
 
 export const getConsultationRequests = async (consultantId: number): Promise<ConsultationResponse[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/consultations/consultant/${consultantId}/requests`);
-    return response.data;
+    return await httpGet<ConsultationResponse[]>(`${BASE_URL}/consultant/${consultantId}/requests`);
   } catch (error) {
     throw error;
   }
@@ -80,16 +76,14 @@ export const getConsultationRequests = async (consultantId: number): Promise<Con
 
 export const updateConsultationStatus = async (consultId: string, status: string): Promise<ConsultationResponse> => {
   try {
-    const response = await axios.patch(
-      `${API_BASE_URL}/api/consultations/${consultId}/status`,
-      null,
-      { params: { status } }
-    );
+    const response = await httpPatch<{ success: boolean; consultation: ConsultationResponse; message?: string }>(`${BASE_URL}/${consultId}/status`, null, {
+      params: { status }
+    });
 
-    if (response.data.success) {
-      return response.data.consultation;
+    if (response.success) {
+      return response.consultation;
     } else {
-      throw new Error(response.data.message || '상담 상태 변경에 실패했습니다.');
+      throw new Error(response.message || '상담 상태 변경에 실패했습니다.');
     }
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || '상담 상태 변경에 실패했습니다.');
@@ -98,16 +92,14 @@ export const updateConsultationStatus = async (consultId: string, status: string
 
 export const cancelConsultation = async (consultId: string, customerId: number): Promise<ConsultationResponse> => {
   try {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/consultations/${consultId}/cancel`,
-      null,
-      { params: { customerId } }
-    );
+    const response = await httpPost<{ success: boolean; consultation: ConsultationResponse; message?: string }>(`${BASE_URL}/${consultId}/cancel`, null, {
+      params: { customerId }
+    });
 
-    if (response.data.success) {
-      return response.data.consultation;
+    if (response.success) {
+      return response.consultation;
     } else {
-      throw new Error(response.data.message || '상담 취소에 실패했습니다.');
+      throw new Error(response.message || '상담 취소에 실패했습니다.');
     }
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || '상담 취소에 실패했습니다.');
@@ -116,8 +108,7 @@ export const cancelConsultation = async (consultId: string, customerId: number):
 
 export const getConsultationDetails = async (consultId: string): Promise<ConsultationResponse> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/consultations/${consultId}/details`);
-    return response.data;
+    return await httpGet<ConsultationResponse>(`${BASE_URL}/${consultId}/details`);
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || '상담 상세 정보 조회에 실패했습니다.');
   }
@@ -125,15 +116,12 @@ export const getConsultationDetails = async (consultId: string): Promise<Consult
 
 export const joinConsultationRoom = async (consultationId: string, userId: number): Promise<any> => {
   try {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/webrtc/consultation/${consultationId}/join`,
-      { userId }
-    );
+    const response = await httpPost<{ success: boolean; message?: string }>(`/webrtc/consultation/${consultationId}/join`, { userId });
 
-    if (response.data.success) {
-      return response.data;
+    if (response.success) {
+      return response;
     } else {
-      throw new Error(response.data.message || '상담 방 입장에 실패했습니다.');
+      throw new Error(response.message || '상담 방 입장에 실패했습니다.');
     }
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || '상담 방 입장에 실패했습니다.');

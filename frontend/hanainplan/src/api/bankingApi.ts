@@ -1,4 +1,4 @@
-import { httpGet, httpPost, httpPut } from '../lib/http';
+import { httpGet, httpPost, httpPatch } from '../lib/http';
 
 export interface BankingAccount {
   accountId: number;
@@ -201,7 +201,7 @@ export const createBankingAccount = async (request: CreateAccountRequest): Promi
 };
 
 export const updateBankingAccount = async (accountId: number, accountName?: string, description?: string): Promise<BankingAccount> => {
-  const response = await httpPut<BankingAccount>(`/banking/${accountId}`, null, {
+  const response = await httpPatch<BankingAccount>(`/banking/${accountId}`, null, {
     params: {
       accountName,
       description
@@ -211,7 +211,7 @@ export const updateBankingAccount = async (accountId: number, accountName?: stri
 };
 
 export const updateBankingAccountStatus = async (accountId: number, status: string): Promise<BankingAccount> => {
-  const response = await httpPut<BankingAccount>(`/banking/${accountId}/status`, null, {
+  const response = await httpPatch<BankingAccount>(`/banking/${accountId}/status`, null, {
     params: {
       status
     }

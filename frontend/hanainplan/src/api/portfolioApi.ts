@@ -1,4 +1,7 @@
-import { axiosInstance } from '../lib/axiosInstance';
+import { httpGet } from '../lib/http';
+
+const BASE_URL = '/api/portfolio';
+const BANKING_BASE_URL = '/banking';
 
 export interface PortfolioData {
   totalAssets?: number;
@@ -29,16 +32,15 @@ export interface IrpAccountInfo {
 }
 
 export const getPortfolio = async (customerId: number): Promise<PortfolioData> => {
-  const response = await axiosInstance.get(`/api/portfolio/${customerId}`);
-  return response.data;
+  return await httpGet<PortfolioData>(`${BASE_URL}/${customerId}`);
 };
 
 export const getIrpAccount = async (userId: number): Promise<IrpAccountInfo | null> => {
   try {
-    const response = await axiosInstance.get(`/banking/irp/account/user/${userId}`);
+    const response = await httpGet<IrpAccountInfo>(`${BANKING_BASE_URL}/irp/account/user/${userId}`);
 
-    if (response.data) {
-      return response.data;
+    if (response) {
+      return response;
     }
 
     return null;

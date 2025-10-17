@@ -1,4 +1,6 @@
-import axios from 'axios';
+import { httpGet, httpPost, httpPatch, httpDelete } from '../lib/http';
+
+const BASE_URL = '/consultant/schedules';
 
 export interface ScheduleEvent {
   id: string;
@@ -9,8 +11,6 @@ export interface ScheduleEvent {
   clientName?: string;
   type: 'consultation' | 'meeting' | 'other';
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const getConsultantId = (): number => {
   const userStorage = localStorage.getItem('user-storage');
@@ -36,11 +36,9 @@ export const fetchSchedules = async (): Promise<ScheduleEvent[]> => {
   try {
     const consultantId = getConsultantId();
 
-    const response = await axios.get(`${API_BASE_URL}/api/consultant/schedules`, {
-      params: { consultantId }
-    });
+    const response = await httpGet<any[]>(BASE_URL, { consultantId });
 
-    return response.data.map((schedule: any) => ({
+    return response.map((schedule: any) => ({
       id: schedule.id || String(schedule.scheduleId),
       title: schedule.title,
       start: schedule.start || schedule.startTime,
@@ -68,18 +66,11 @@ export const createSchedule = async (event: Omit<ScheduleEvent, 'id'>): Promise<
       isAllDay: false
     };
 
-    const response = await axios.post(
-      `${API_BASE_URL}/api/consultant/schedules`,
-      requestData,
-      {
-        params: { consultantId },
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    const response = await httpPost<any>(BASE_URL, requestData, {
+      params: { consultantId }
+    });
 
-    const schedule = response.data;
+    const schedule = response;
     return {
       id: schedule.id || String(schedule.scheduleId),
       title: schedule.title,
@@ -106,18 +97,11 @@ export const updateSchedule = async (eventId: string, event: Partial<ScheduleEve
     if (event.start) requestData.startTime = event.start;
     if (event.end) requestData.endTime = event.end;
 
-    const response = await axios.put(
-      `${API_BASE_URL}/api/consultant/schedules/${eventId}`,
-      requestData,
-      {
-        params: { consultantId },
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    const response = await httpPatch<any>(`${BASE_URL}/${eventId}`, requestData, {
+      params: { consultantId }
+    });
 
-    const schedule = response.data;
+    const schedule = response;
     return {
       id: schedule.id || String(schedule.scheduleId),
       title: schedule.title,
@@ -136,9 +120,7 @@ export const deleteSchedule = async (eventId: string): Promise<void> => {
   try {
     const consultantId = getConsultantId();
 
-    await axios.delete(`${API_BASE_URL}/api/consultant/schedules/${eventId}`, {
-      params: { consultantId }
-    });
+    await httpDelete(`${BASE_URL}/${eventId}`, { consultantId });
   } catch (error) {
     throw error;
   }
@@ -149,14 +131,12 @@ export const fetchAvailableConsultantsAtTime = async (
   endTime: string
 ): Promise<number[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/consultants/available-at-time`, {
-      params: {
-        startTime,
-        endTime
-      }
+    const response = await httpGet<any[]>('/consultants/available-at-time', {
+      startTime,
+      endTime
     });
 
-    return response.data.map((consultant: any) => consultant.consultantId);
+    return response.map((consultant: any) => consultant.consultantId);
   } catch (error) {
     throw error;
   }

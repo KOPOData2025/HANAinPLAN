@@ -28,6 +28,15 @@ export async function httpPut<TResponse, TBody = unknown>(
   return res.data;
 }
 
+export async function httpPatch<TResponse, TBody = unknown>(
+  url: string,
+  body?: TBody,
+  config?: AxiosRequestConfig
+): Promise<TResponse> {
+  const res = await axiosInstance.patch<TResponse>(url, body, config);
+  return res.data;
+}
+
 export async function httpDelete<TResponse, TParams = unknown>(
   url: string,
   params?: TParams,
