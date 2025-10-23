@@ -48,6 +48,7 @@ interface SignUpData {
     industryName: string;
     careerYears: number | null;
     assetLevel: string;
+    isHighIncome: boolean | null;
   };
 }
 
@@ -88,7 +89,8 @@ function GeneralSignUp({ onBackToLogin, onBackToUserTypeSelection }: GeneralSign
       industryCode: '',
       industryName: '',
       careerYears: null,
-      assetLevel: ''
+      assetLevel: '',
+      isHighIncome: null
     }
   })
 
@@ -143,7 +145,8 @@ function GeneralSignUp({ onBackToLogin, onBackToUserTypeSelection }: GeneralSign
     return jobInfo.industryCode.trim() !== '' &&
            jobInfo.industryName.trim() !== '' &&
            jobInfo.careerYears !== null &&
-           jobInfo.assetLevel.trim() !== ''
+           jobInfo.assetLevel.trim() !== '' &&
+           jobInfo.isHighIncome !== null
   }
 
   const isStep5Valid = () => {
@@ -166,7 +169,7 @@ function GeneralSignUp({ onBackToLogin, onBackToUserTypeSelection }: GeneralSign
         socialNumber: signUpData.socialNumber,
         phoneNumber: signUpData.phoneNumber,
         verificationCode: signUpData.verificationCode,
-        ci: signUpData.ci,
+        ci: signUpData.ci || '',
         email: signUpData.email,
         password: signUpData.password,
         confirmPassword: signUpData.confirmPassword,

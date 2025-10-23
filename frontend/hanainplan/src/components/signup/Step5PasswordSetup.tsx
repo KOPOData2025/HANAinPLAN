@@ -21,8 +21,6 @@ function Step5PasswordSetup({ signUpData, onDataChange }: Step5PasswordSetupProp
     onDataChange({ ...signUpData, confirmPassword })
   }
 
-  const handleKakaoLogin = () => {
-  }
 
   const getPasswordValidation = () => {
     const { password } = signUpData
@@ -169,25 +167,6 @@ function Step5PasswordSetup({ signUpData, onDataChange }: Step5PasswordSetupProp
           )}
         </div>
 
-        {}
-        <div className="flex items-center gap-4 my-2">
-          <div className="flex-1 h-px bg-gray-300"></div>
-          <span className="font-['Hana2.0_M'] text-[14px] text-gray-500">또는</span>
-          <div className="flex-1 h-px bg-gray-300"></div>
-        </div>
-
-        {}
-        <button
-          onClick={handleKakaoLogin}
-          className="w-full h-[50px] bg-[#FEE500] hover:bg-[#FDD835] text-black rounded-[10px] font-['Hana2.0_M'] text-[16px] flex items-center justify-center gap-3 transition-all duration-200 border-2 border-[#FEE500] hover:border-[#FDD835]"
-        >
-          <img
-            src="/images/KakaoTalk_logo.png"
-            alt="카카오톡 로고"
-            className="w-5 h-5"
-          />
-          <span>카카오로 간편 로그인</span>
-        </button>
       </div>
     </div>
   )

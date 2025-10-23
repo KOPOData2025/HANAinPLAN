@@ -1,4 +1,4 @@
-import { httpGet, httpPost, httpPatch } from '../lib/http';
+import { httpGet, httpPost, httpPut } from '../lib/http';
 
 export interface BankingAccount {
   accountId: number;
@@ -166,6 +166,10 @@ export const getAllAccounts = async (userId: number): Promise<AllAccountsRespons
       irpAccount = irpResponse;
       totalIrpBalance = irpResponse.currentBalance || 0;
     } catch (error) {
+      console.log('IRP 계좌 조회 실패:', error);
+      // IRP 계좌가 없거나 조회 실패 시 기본값 설정
+      irpAccount = undefined;
+      totalIrpBalance = 0;
     }
 
     const bankingAccounts = allBankingAccounts.filter(account => {
@@ -201,7 +205,7 @@ export const createBankingAccount = async (request: CreateAccountRequest): Promi
 };
 
 export const updateBankingAccount = async (accountId: number, accountName?: string, description?: string): Promise<BankingAccount> => {
-  const response = await httpPatch<BankingAccount>(`/banking/${accountId}`, null, {
+  const response = await httpPut<BankingAccount>(`/banking/${accountId}`, null, {
     params: {
       accountName,
       description
@@ -211,7 +215,7 @@ export const updateBankingAccount = async (accountId: number, accountName?: stri
 };
 
 export const updateBankingAccountStatus = async (accountId: number, status: string): Promise<BankingAccount> => {
-  const response = await httpPatch<BankingAccount>(`/banking/${accountId}/status`, null, {
+  const response = await httpPut<BankingAccount>(`/banking/${accountId}/status`, null, {
     params: {
       status
     }

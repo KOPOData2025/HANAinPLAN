@@ -3,6 +3,7 @@ import type { FundClassDetail, FundPurchaseRequest } from '../../types/fund.type
 import { fundSubscriptionApi } from '../../api/fundApi';
 import { useUserStore } from '../../store/userStore';
 import { formatAmount, formatUnits } from '../../utils/fundUtils';
+import NotificationModal from '../common/NotificationModal';
 
 interface FundPurchaseModalProps {
   isOpen: boolean;
@@ -18,6 +19,17 @@ const FundPurchaseModal = ({ isOpen, onClose, fund, onSuccess }: FundPurchaseMod
   const [purchasing, setPurchasing] = useState(false);
   const [estimatedFee, setEstimatedFee] = useState<number>(0);
   const [estimatedUnits, setEstimatedUnits] = useState<number>(0);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     calculateEstimates();
@@ -50,24 +62,44 @@ const FundPurchaseModal = ({ isOpen, onClose, fund, onSuccess }: FundPurchaseMod
 
   const handlePurchase = async () => {
     if (!fund || !purchaseAmount) {
-      alert('매수 금액을 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '입력 오류',
+        message: '매수 금액을 입력해주세요.'
+      });
       return;
     }
 
     if (!user) {
-      alert('로그인이 필요합니다.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '로그인 필요',
+        message: '로그인이 필요합니다.'
+      });
       return;
     }
 
     const amount = Number(purchaseAmount);
 
     if (fund.rules?.minInitialAmount && amount < fund.rules.minInitialAmount) {
-      alert(`최소 투자금액은 ${fund.rules.minInitialAmount.toLocaleString()}원입니다.`);
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '최소 투자금액',
+        message: `최소 투자금액은 ${fund.rules.minInitialAmount.toLocaleString()}원입니다.`
+      });
       return;
     }
 
     if (!agreedToRisks) {
-      alert('투자 유의사항에 동의해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '동의 필요',
+        message: '투자 유의사항에 동의해주세요.'
+      });
       return;
     }
 
@@ -82,17 +114,44 @@ const FundPurchaseModal = ({ isOpen, onClose, fund, onSuccess }: FundPurchaseMod
 
       const response = await fundSubscriptionApi.purchaseFund(request);
 
+      console.log('펀드 매수 API 응답:', response);
+
       if (response.success) {
-        alert(`펀드 매수가 완료되었습니다!\n\n매수 좌수: ${response.purchaseUnits?.toFixed(6)}좌\n결제일: ${response.settlementDate}`);
+        console.log('매수 성공 - 알림 모달 표시');
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: '매수 완료',
+          message: `펀드 매수가 완료되었습니다!\n\n매수 좌수: ${response.purchaseUnits?.toFixed(6)}좌\n결제일: ${response.settlementDate}`
+        });
+        console.log('알림 상태 설정됨:', {
+          isOpen: true,
+          type: 'success',
+          title: '매수 완료'
+        });
         setPurchaseAmount('');
         setAgreedToRisks(false);
-        onClose();
-        if (onSuccess) onSuccess();
+        
+        // 성공 모달을 먼저 표시한 후 모달 닫기
+        setTimeout(() => {
+          onClose();
+          if (onSuccess) onSuccess();
+        }, 2000); // 2초 후 모달 닫기
       } else {
-        alert(`펀드 매수 실패: ${response.errorMessage}`);
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: '매수 실패',
+          message: `펀드 매수 실패: ${response.errorMessage}`
+        });
       }
     } catch (err: any) {
-      alert(`펀드 매수 중 오류가 발생했습니다: ${err.message}`);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '오류 발생',
+        message: `펀드 매수 중 오류가 발생했습니다: ${err.message}`
+      });
     } finally {
       setPurchasing(false);
     }
@@ -257,6 +316,15 @@ const FundPurchaseModal = ({ isOpen, onClose, fund, onSuccess }: FundPurchaseMod
           </button>
         </div>
       </div>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 };

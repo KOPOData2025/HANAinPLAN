@@ -211,7 +211,7 @@ function ProductTransactions() {
             onChange={setSelectedDate}
             value={selectedDate}
             tileContent={tileContent}
-            formatDay={(locale, date) => date.toLocaleString("en", {day: "numeric"})}
+            formatDay={(_locale, date) => date.toLocaleString("en", {day: "numeric"})}
             calendarType="gregory"
           />
 

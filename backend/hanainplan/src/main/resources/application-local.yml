@@ -5,7 +5,7 @@
 spring:
   datasource:
     # Docker MySQL 컨테이너 연결 (localhost:3306으로 포트 포워딩)
-    url: jdbc:mysql://localhost:3306/${MYSQL_DATABASE}
+    url: ${MYSQL_URL}
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -51,8 +51,8 @@ logging:
 # 은행 서버 URL 설정
 bank:
   hana:
-    base-url: ${HANA_BANK_URL:http://localhost:8081}
+    url: ${HANA_BANK_URL:http://localhost:8081}
   kookmin:
-    base-url: ${KOOKMIN_BANK_URL:http://localhost:8082}
+    url: ${KOOKMIN_BANK_URL:http://localhost:8083}
   shinhan:
-    base-url: ${SHINHAN_BANK_URL:http://localhost:8083}
+    url: ${SHINHAN_BANK_URL:http://localhost:8082}

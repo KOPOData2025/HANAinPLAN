@@ -20,7 +20,7 @@ public class MyDataConsentService {
     private final RestTemplate restTemplate;
     private final UserAccountTransactionService userAccountTransactionService;
 
-    private static final String CI_SERVER_MYDATA_URL = "http://localhost:8084/api/user/mydata/consent";
+    private static final String CI_SERVER_MYDATA_URL = "https://user-production-3188.up.railway.app/api/user/mydata/consent";
 
     public MyDataConsentResponseDto processMyDataConsent(MyDataConsentRequestDto request) {
         try {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
+import NotificationModal from '../../components/common/NotificationModal';
 import {
   getTodayConsultations,
   getConsultationRequests,
@@ -17,6 +18,17 @@ function ConsultationManagement() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmedConsultation, setConfirmedConsultation] = useState<ConsultationResponse | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   const queryClient = useQueryClient();
 
   const { user } = useUserStore();
@@ -63,11 +75,21 @@ function ConsultationManagement() {
         setConfirmedConsultation(data);
         setShowConfirmModal(true);
       } else {
-        alert('상담 상태가 변경되었습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: '상태 변경 완료',
+          message: '상담 상태가 변경되었습니다.'
+        });
       }
     },
     onError: (error: any) => {
-      alert(error.message || '상태 변경에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '상태 변경 실패',
+        message: error.message || '상태 변경에 실패했습니다.'
+      });
     }
   });
 
@@ -513,6 +535,15 @@ function ConsultationManagement() {
           </div>
         </div>
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

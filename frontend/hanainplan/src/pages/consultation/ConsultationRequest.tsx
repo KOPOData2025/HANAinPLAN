@@ -1,30 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
+import NotificationModal from '../../components/common/NotificationModal';
 import { fetchAvailableConsultantsAtTime } from '../../api/scheduleApi';
-import { createConsultation } from '../../api/consultationApi';
+import { createConsultation, getConsultants, type Counselor } from '../../api/consultationApi';
 import { useUserStore } from '../../store/userStore';
 import { getAllDepositProducts } from '../../api/productApi';
 import { fundProductApi } from '../../api/fundApi';
-import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-interface Counselor {
-  consultantId: number;
-  userName: string;
-  department: string;
-  position: string;
-  branchName: string;
-  specialization: string;
-  consultationRating: number;
-  totalConsultations: number;
-  workEmail: string;
-  phoneNumber: string;
-  experienceYears: string;
-  consultationStatus: string;
-  workStatus: string;
-}
 
 interface ConsultationField {
   id: string;
@@ -37,7 +20,6 @@ interface ProductOption {
   id: string;
   name: string;
   description: string;
-  icon: string;
   type: 'deposit' | 'fund';
 }
 
@@ -51,7 +33,7 @@ const consultationFields: ConsultationField[] = [
   {
     id: 'product',
     name: '상품가입',
-    description: '정기예금 및 펀드가입 상담',
+    description: '원리금보장/실적배당형 상품 가입 상담',
     icon: '📋'
   },
   {
@@ -62,15 +44,6 @@ const consultationFields: ConsultationField[] = [
   }
 ];
 
-const getFundIcon = (fundName: string) => {
-  if (fundName.includes('글로벌') || fundName.includes('해외')) return '🌍';
-  if (fundName.includes('테크') || fundName.includes('기술')) return '💻';
-  if (fundName.includes('배당')) return '📈';
-  if (fundName.includes('ESG') || fundName.includes('친환경')) return '🌱';
-  if (fundName.includes('균형')) return '⚖️';
-  if (fundName.includes('성장')) return '📊';
-  return '💰';
-};
 
 const assetManagementOptions = [
   {
@@ -111,15 +84,24 @@ function ConsultationRequest() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showProductNoticeModal, setShowProductNoticeModal] = useState(false);
   const [consultationId, setConsultationId] = useState<string>('');
+  const [selectedProductTab, setSelectedProductTab] = useState<'deposit' | 'fund'>('deposit');
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const { user } = useUserStore();
 
   const { data: allConsultants = [] } = useQuery({
     queryKey: ['consultants'],
-    queryFn: async () => {
-      const response = await axios.get<Counselor[]>(`${API_BASE_URL}/api/consultants`);
-      return response.data;
-    }
+    queryFn: getConsultants
   });
 
   const { data: depositProducts = [] } = useQuery({
@@ -137,24 +119,21 @@ function ConsultationRequest() {
     }
   });
 
-  const productOptions: ProductOption[] = [
-    ...depositProducts
-      .filter(product => product.bankCode === 'HANA')
-      .map(product => ({
-        id: product.depositCode,
-        name: product.name,
-        description: product.description || '안정적인 수익을 위한 정기예금 상품',
-        icon: '🏦',
-        type: 'deposit' as const
-      })),
-    ...fundClasses.map(fund => ({
-      id: fund.childFundCd,
-      name: fund.fundMaster.fundName,
-      description: `${fund.fundMaster.assetType} | ${fund.classCode}클래스`,
-      icon: getFundIcon(fund.fundMaster.fundName),
-      type: 'fund' as const
-    }))
-  ];
+  const depositOptions: ProductOption[] = depositProducts
+    .filter(product => product.bankCode === 'HANA')
+    .map(product => ({
+      id: product.depositCode,
+      name: product.name,
+      description: product.description || '안정적인 수익을 위한 정기예금 상품',
+      type: 'deposit' as const
+    }));
+
+  const fundOptions: ProductOption[] = fundClasses.map(fund => ({
+    id: fund.childFundCd,
+    name: fund.fundMaster.fundName,
+    description: `${fund.fundMaster.assetType} | ${fund.classCode} | 위험도 ${fund.fundMaster.riskGrade}`,
+    type: 'fund' as const
+  }));
 
   const generateDates = () => {
     const dates: string[] = [];
@@ -202,14 +181,17 @@ function ConsultationRequest() {
   };
 
   const getSubOptions = () => {
-    if (selectedField === 'product') return productOptions;
+    if (selectedField === 'product') {
+      return selectedProductTab === 'deposit' ? depositOptions : fundOptions;
+    }
     if (selectedField === 'asset-management') return assetManagementOptions;
     return [];
   };
 
   const getSelectedOptionName = () => {
     if (selectedField === 'product') {
-      return productOptions.find(option => option.id === selectedSubOption)?.name || '';
+      const options = selectedProductTab === 'deposit' ? depositOptions : fundOptions;
+      return options.find(option => option.id === selectedSubOption)?.name || '';
     }
     if (selectedField === 'asset-management') {
       return assetManagementOptions.find(option => option.id === selectedSubOption)?.name || '';
@@ -245,20 +227,40 @@ function ConsultationRequest() {
 
   const handleSubmit = async () => {
     if (!user?.userId || !selectedCounselor || !selectedDate || !selectedTimeSlot) {
-      alert('모든 정보를 선택해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '정보 선택 필요',
+        message: '모든 정보를 선택해주세요.'
+      });
       return;
     }
 
     if (selectedField === 'product' && !selectedSubOption) {
-      alert('상품을 선택해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '상품 선택 필요',
+        message: '상품을 선택해주세요.'
+      });
       return;
     }
     if (selectedField === 'asset-management' && !selectedSubOption) {
-      alert('상담 유형을 선택해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '상담 유형 선택 필요',
+        message: '상담 유형을 선택해주세요.'
+      });
       return;
     }
     if (selectedField === 'general' && !generalRequest.trim()) {
-      alert('요청 사항을 작성해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '요청 사항 작성 필요',
+        message: '요청 사항을 작성해주세요.'
+      });
       return;
     }
 
@@ -288,7 +290,12 @@ function ConsultationRequest() {
       setConsultationId(response.consultId);
       setShowSuccessModal(true);
     } catch (error: any) {
-      alert(error.message || '상담 신청에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '상담 신청 실패',
+        message: error.message || '상담 신청에 실패했습니다.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -398,6 +405,39 @@ function ConsultationRequest() {
           </p>
         </div>
 
+        {selectedField === 'product' && (
+          <div className="flex justify-center mb-6">
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => {
+                  setSelectedProductTab('deposit');
+                  setSelectedSubOption('');
+                }}
+                className={`px-6 py-2 rounded-md font-hana-medium transition-colors ${
+                  selectedProductTab === 'deposit'
+                    ? 'bg-white text-hana-green shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                원리금 보장상품
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedProductTab('fund');
+                  setSelectedSubOption('');
+                }}
+                className={`px-6 py-2 rounded-md font-hana-medium transition-colors ${
+                  selectedProductTab === 'fund'
+                    ? 'bg-white text-hana-green shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+              실적배당형 상품
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
           {getSubOptions().map((option) => (
             <div
@@ -409,9 +449,21 @@ function ConsultationRequest() {
               }`}
               onClick={() => setSelectedSubOption(option.id)}
             >
-              <div className="text-4xl mb-3 text-center">{option.icon}</div>
-              <h3 className="text-lg font-hana-bold text-gray-900 mb-2 text-center">{option.name}</h3>
-              <p className="text-sm text-gray-600 text-center">{option.description}</p>
+              <h3 className="text-lg font-hana-bold text-gray-900 mb-3 text-center">{option.name}</h3>
+              
+              {'type' in option && option.type === 'fund' && (
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-hana-medium">
+                    {option.description.split(' | ')[0]}
+                  </span>
+                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-hana-medium">
+                    {option.description.split(' | ')[1]}
+                  </span>
+                  <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-hana-medium">
+                    {option.description.split(' | ')[2]}
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -598,7 +650,6 @@ function ConsultationRequest() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-hana-bold text-gray-900">{getStepTitle()}</h1>
-              <span className="text-sm text-gray-500">{currentStep}/{getTotalSteps()} 단계</span>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -827,6 +878,15 @@ function ConsultationRequest() {
           </div>
         )}
       </div>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

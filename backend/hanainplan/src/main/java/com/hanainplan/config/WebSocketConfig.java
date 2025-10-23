@@ -29,7 +29,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:5173", "http://127.0.0.1:*", "http://localhost:3000")  // CORS 허용
+                .setAllowedOriginPatterns("http://localhost:5173", "http://127.0.0.1:*", "http://localhost:3000", "http://192.168.217.239:5173", "https://frontend-six-ecru-94.vercel.app/")  // CORS 허용
+                .setAllowedOrigins("https://frontend-six-ecru-94.vercel.app")
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 

@@ -2,6 +2,7 @@ package com.hanainplan.kookmin.account.service;
 
 import com.hanainplan.kookmin.account.dto.AccountRequestDto;
 import com.hanainplan.kookmin.account.dto.AccountResponseDto;
+import com.hanainplan.kookmin.account.dto.TransactionRequestDto;
 import com.hanainplan.kookmin.account.entity.Account;
 import com.hanainplan.kookmin.account.entity.Transaction;
 import com.hanainplan.kookmin.account.repository.AccountRepository;
@@ -228,5 +229,34 @@ public class AccountService {
             log.error("국민은행 입금 거래내역 저장 실패 - 계좌번호: {}, 오류: {}", account.getAccountNumber(), e.getMessage());
             throw new RuntimeException("거래내역 저장 실패: " + e.getMessage());
         }
+    }
+
+    public String createTransaction(TransactionRequestDto request) {
+        log.info("국민은행 거래내역 생성 요청 - 계좌번호: {}, 거래유형: {}, 금액: {}원", 
+                request.getAccountNumber(), request.getTransactionType(), request.getAmount());
+
+        Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+                .orElseThrow(() -> new IllegalArgumentException("계좌를 찾을 수 없습니다: " + request.getAccountNumber()));
+
+        String transactionId = "KB-TX-" + System.currentTimeMillis() + "-" + 
+                String.format("%04d", (int)(Math.random() * 10000));
+
+        Transaction transaction = Transaction.builder()
+                .transactionId(transactionId)
+                .transactionDatetime(request.getTransactionDatetime())
+                .transactionType(request.getTransactionType())
+                .transactionCategory(request.getTransactionCategory())
+                .amount(request.getAmount())
+                .balanceAfter(request.getBalanceAfter())
+                .branchName(request.getBranchName() != null ? request.getBranchName() : "국민은행 본점")
+                .account(account)
+                .build();
+
+        transactionRepository.save(transaction);
+
+        log.info("국민은행 거래내역 생성 완료 - 거래ID: {}, 계좌번호: {}, 거래유형: {}, 금액: {}원", 
+                transactionId, request.getAccountNumber(), request.getTransactionType(), request.getAmount());
+
+        return transactionId;
     }
 }

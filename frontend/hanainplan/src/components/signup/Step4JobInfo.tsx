@@ -6,6 +6,7 @@ interface JobInfo {
   industryName: string
   careerYears: number | null
   assetLevel: string
+  isHighIncome: boolean | null
 }
 
 interface Step4Props {
@@ -13,7 +14,7 @@ interface Step4Props {
   onJobInfoChange: (jobInfo: JobInfo) => void
 }
 
-type JobSubStep = 1 | 2
+type JobSubStep = 1 | 2 | 3
 
 function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
   const [currentSubStep, setCurrentSubStep] = useState<JobSubStep>(1)
@@ -73,10 +74,15 @@ function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
     return jobInfo.assetLevel.trim() !== ''
   }
 
+  const isSubStep3Valid = () => {
+    return jobInfo.isHighIncome !== null
+  }
+
   const isCurrentSubStepValid = () => {
     switch (currentSubStep) {
       case 1: return isSubStep1Valid()
       case 2: return isSubStep2Valid()
+      case 3: return isSubStep3Valid()
       default: return false
     }
   }
@@ -123,6 +129,13 @@ function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
     })
   }
 
+  const handleIncomeLevelChange = (isHighIncome: boolean) => {
+    onJobInfoChange({
+      ...jobInfo,
+      isHighIncome: isHighIncome
+    })
+  }
+
   const assetLevels = [
     { value: 'under_1', label: '1천만원 미만' },
     { value: '1_to_5', label: '1천만원 ~ 5천만원' },
@@ -143,7 +156,7 @@ function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
   ]
 
   const renderSubStep1 = () => (
-    <div className="w-[480px] space-y-6 px-2 max-h-[260px] overflow-y-auto">
+    <div className="w-[480px] space-y-6 px-2 max-h-[330px] overflow-y-auto">
       {}
       <div className="bg-white rounded-[12px] p-4 border border-gray-200 shadow-sm">
         <h3 className="font-['Hana2.0_M'] text-lg text-gray-800 mb-3">
@@ -230,7 +243,7 @@ function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
   )
 
   const renderSubStep2 = () => (
-    <div className="w-[480px] space-y-6 px-2 max-h-[260px] overflow-y-auto">
+    <div className="w-[480px] space-y-6 px-2 max-h-[330px] overflow-y-auto">
       {}
       <div className="bg-white rounded-[12px] p-4 border border-gray-200 shadow-sm">
         <h3 className="font-['Hana2.0_M'] text-lg text-gray-800 mb-3">
@@ -263,12 +276,74 @@ function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
     </div>
   )
 
+  const renderSubStep3 = () => (
+    <div className="w-[480px] space-y-6 px-2 max-h-[330px] overflow-y-auto">
+      {}
+      <div className="bg-white rounded-[12px] p-4 border border-gray-200 shadow-sm">
+        <h3 className="font-['Hana2.0_M'] text-lg text-gray-800 mb-3">
+          연소득 정보
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+          IRP 세액공제율 계산을 위해 연소득 정보가 필요합니다.
+        </p>
+        <div className="space-y-3">
+          <label className="flex items-center cursor-pointer p-3 rounded-[8px] hover:bg-gray-50 border border-gray-200">
+            <input
+              type="radio"
+              name="incomeLevel"
+              checked={jobInfo?.isHighIncome === false}
+              onChange={() => handleIncomeLevelChange(false)}
+              className="sr-only"
+            />
+            <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+              jobInfo?.isHighIncome === false
+                ? 'border-[#008485] bg-[#008485]'
+                : 'border-gray-300'
+            }`}>
+              {jobInfo?.isHighIncome === false && (
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+              )}
+            </div>
+            <div>
+              <span className="font-['Hana2.0_M'] text-[14px] text-gray-700">5,500만원 미만</span>
+              <p className="text-xs text-gray-500 mt-1">세액공제율 16.5% 적용</p>
+            </div>
+          </label>
+          
+          <label className="flex items-center cursor-pointer p-3 rounded-[8px] hover:bg-gray-50 border border-gray-200">
+            <input
+              type="radio"
+              name="incomeLevel"
+              checked={jobInfo?.isHighIncome === true}
+              onChange={() => handleIncomeLevelChange(true)}
+              className="sr-only"
+            />
+            <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+              jobInfo?.isHighIncome === true
+                ? 'border-[#008485] bg-[#008485]'
+                : 'border-gray-300'
+            }`}>
+              {jobInfo?.isHighIncome === true && (
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+              )}
+            </div>
+            <div>
+              <span className="font-['Hana2.0_M'] text-[14px] text-gray-700">5,500만원 이상</span>
+              <p className="text-xs text-gray-500 mt-1">세액공제율 13.2% 적용</p>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="w-full flex flex-col items-center gap-2">
 
       {}
       {currentSubStep === 1 && renderSubStep1()}
       {currentSubStep === 2 && renderSubStep2()}
+      {currentSubStep === 3 && renderSubStep3()}
 
       {}
       <div className="flex gap-3 mt-4">
@@ -281,7 +356,7 @@ function Step4JobInfo({ jobInfo, onJobInfoChange }: Step4Props) {
           </button>
         )}
 
-        {currentSubStep < 2 && (
+        {currentSubStep < 3 && (
           <button
             onClick={() => setCurrentSubStep((prev) => (prev + 1) as JobSubStep)}
             disabled={!isCurrentSubStepValid()}

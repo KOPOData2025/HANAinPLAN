@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { login } from '../../api/userApi'
 import type { LoginRequest, LoginResponse } from '../../api/userApi'
 import { useUserStore } from '../../store/userStore'
-import KakaoLogin from '../auth/KakaoLogin'
 
 interface LoginFormProps {
   onSignUp: () => void;
@@ -116,10 +115,15 @@ function LoginForm({ onSignUp }: LoginFormProps) {
           userId: response.userId || 0,
           phoneNumber: response.phoneNumber || '',
           name: response.userName || '',
+          email: response.email || '',
           userType: response.userType as 'GENERAL' | 'COUNSELOR',
+          gender: 'M',
+          birthDate: '',
+          loginType: response.loginType || 'GENERAL',
+          isPhoneVerified: true,
           isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdDate: new Date().toISOString(),
+          lastLoginDate: new Date().toISOString()
         });
 
         setTimeout(() => {
@@ -145,14 +149,6 @@ function LoginForm({ onSignUp }: LoginFormProps) {
     }
   };
 
-  const handleKakaoLoginError = (error: string) => {
-    setAlertModal({
-      isOpen: true,
-      title: '카카오 로그인 실패',
-      message: error,
-      type: 'error'
-    });
-  };
 
   const isFormValid = () => {
     const numbers = phoneNumber.replace(/[^\d]/g, '')
@@ -244,11 +240,6 @@ function LoginForm({ onSignUp }: LoginFormProps) {
       >
         {isSubmitting ? '로그인 중...' : '로그인'}
       </button>
-
-      {}
-      <KakaoLogin
-        onError={handleKakaoLoginError}
-      />
 
       {}
       <div className="font-['Hana2.0_M'] text-[16px] leading-[20px]">

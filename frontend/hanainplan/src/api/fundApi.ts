@@ -1,4 +1,4 @@
-import { httpGet, httpPost } from '../lib/http';
+import axios from 'axios';
 import type {
   FundClassDetail,
   FundPurchaseRequest,
@@ -10,66 +10,88 @@ import type {
   FundTransactionStats,
 } from '../types/fund.types';
 
-const BASE_URL = '/banking';
+const API_BASE_URL = 'http://localhost:8080/api/banking';
+
+const fundApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export const fundProductApi = {
   getAllFundClasses: async (): Promise<FundClassDetail[]> => {
-    return await httpGet<FundClassDetail[]>(`${BASE_URL}/fund-classes`);
+    const response = await fundApi.get('/fund-classes');
+    return response.data;
   },
 
   getFundClass: async (childFundCd: string): Promise<FundClassDetail> => {
-    return await httpGet<FundClassDetail>(`${BASE_URL}/fund-classes/${childFundCd}`);
+    const response = await fundApi.get(`/fund-classes/${childFundCd}`);
+    return response.data;
   },
 
   getFundClassesByMaster: async (fundCd: string): Promise<FundClassDetail[]> => {
-    return await httpGet<FundClassDetail[]>(`${BASE_URL}/fund-classes/master/${fundCd}`);
+    const response = await fundApi.get(`/fund-classes/master/${fundCd}`);
+    return response.data;
   },
 
   getFundClassesByAssetType: async (assetType: string): Promise<FundClassDetail[]> => {
-    return await httpGet<FundClassDetail[]>(`${BASE_URL}/fund-classes/asset-type/${assetType}`);
+    const response = await fundApi.get(`/fund-classes/asset-type/${assetType}`);
+    return response.data;
   },
 
   getFundClassesByClassCode: async (classCode: string): Promise<FundClassDetail[]> => {
-    return await httpGet<FundClassDetail[]>(`${BASE_URL}/fund-classes/class-code/${classCode}`);
+    const response = await fundApi.get(`/fund-classes/class-code/${classCode}`);
+    return response.data;
   },
 
   getFundClassesByMaxAmount: async (maxAmount: number): Promise<FundClassDetail[]> => {
-    return await httpGet<FundClassDetail[]>(`${BASE_URL}/fund-classes/max-amount/${maxAmount}`);
+    const response = await fundApi.get(`/fund-classes/max-amount/${maxAmount}`);
+    return response.data;
   },
 };
 
 export const fundSubscriptionApi = {
   purchaseFund: async (request: FundPurchaseRequest): Promise<FundPurchaseResponse> => {
-    return await httpPost<FundPurchaseResponse>(`${BASE_URL}/fund-subscription/purchase`, request);
+    const response = await fundApi.post('/fund-subscription/purchase', request);
+    return response.data;
   },
 
   redeemFund: async (request: FundRedemptionRequest): Promise<FundRedemptionResponse> => {
-    return await httpPost<FundRedemptionResponse>(`${BASE_URL}/fund-subscription/redeem`, request);
+    const response = await fundApi.post('/fund-subscription/redeem', request);
+    return response.data;
   },
 
   getActiveSubscriptions: async (userId: number): Promise<FundSubscription[]> => {
-    return await httpGet<FundSubscription[]>(`${BASE_URL}/fund-subscription/user/${userId}/active`);
+    const response = await fundApi.get(`/fund-subscription/user/${userId}/active`);
+    return response.data;
   },
 };
 
 export const fundTransactionApi = {
   getUserTransactions: async (userId: number): Promise<FundTransaction[]> => {
-    return await httpGet<FundTransaction[]>(`${BASE_URL}/fund-subscription/user/${userId}/transactions`);
+    const response = await fundApi.get(`/fund-subscription/user/${userId}/transactions`);
+    return response.data;
   },
 
   getTransactionStats: async (userId: number): Promise<FundTransactionStats> => {
-    return await httpGet<FundTransactionStats>(`${BASE_URL}/fund-subscription/user/${userId}/stats`);
+    const response = await fundApi.get(`/fund-subscription/user/${userId}/stats`);
+    return response.data;
   },
 };
 
-const HANA_BANK_BASE_URL = '/hana';
+const HANA_BANK_URL = 'http://localhost:8081/api/hana';
 
 export const hanaBankFundApi = {
   getCustomerSubscriptions: async (customerCi: string): Promise<FundSubscription[]> => {
-    return await httpGet<FundSubscription[]>(`${HANA_BANK_BASE_URL}/fund-subscription/customer/${customerCi}`);
+    const response = await axios.get(`${HANA_BANK_URL}/fund-subscription/customer/${customerCi}`);
+    return response.data;
   },
 
   getActiveSubscriptions: async (customerCi: string): Promise<FundSubscription[]> => {
-    return await httpGet<FundSubscription[]>(`${HANA_BANK_BASE_URL}/fund-subscription/customer/${customerCi}/active`);
+    const response = await axios.get(`${HANA_BANK_URL}/fund-subscription/customer/${customerCi}/active`);
+    return response.data;
   },
 };
+
+export default fundApi;

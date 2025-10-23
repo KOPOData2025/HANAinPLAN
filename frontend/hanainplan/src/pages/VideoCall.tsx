@@ -5,6 +5,7 @@ import WebRTCService from '../services/WebRTCService';
 import { useUserStore } from '../store/userStore';
 import type { CallState } from '../services/WebRTCService';
 import type { CallRequestMessage, WebRTCMessage } from '../services/WebSocketService';
+import type { RebalancingSimulationResponse } from '../api/rebalancingApi';
 import { getConsultationDetails, joinConsultationRoom } from '../api/consultationApi';
 import GeneralConsultation from '../components/consultation/GeneralConsultation';
 import ProductConsultation from '../components/consultation/ProductConsultation';
@@ -89,6 +90,7 @@ const VideoCall: React.FC = () => {
   const [isScreenSharing, setIsScreenSharing] = useState<boolean>(false);
   const [consultationStartTime, setConsultationStartTime] = useState<Date | null>(null);
   const [isWaitingForConsultant, setIsWaitingForConsultant] = useState<boolean>(false);
+  const [proposedSimulation, setProposedSimulation] = useState<RebalancingSimulationResponse | null>(null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -185,7 +187,7 @@ const VideoCall: React.FC = () => {
     if (callState.remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = callState.remoteStream;
 
-      remoteVideoRef.current.play().catch(error => {
+      remoteVideoRef.current.play().catch(_error => {
       });
     }
   }, [callState.remoteStream]);
@@ -236,12 +238,29 @@ const VideoCall: React.FC = () => {
       setCallState(state);
     });
 
-    WebRTCService.onConnectionStateChange((state) => {
+    WebRTCService.onConnectionStateChange((_state) => {
     });
 
     WebRTCService.onError((error) => {
       setError(error.message);
       setTimeout(() => setError(''), 5000);
+    });
+
+    // 리밸런싱 관련 핸들러
+    WebSocketService.onPortfolioRebalancing((message) => {
+      if (message.type === 'PORTFOLIO_REBALANCING_PROPOSED') {
+        setProposedSimulation(message.data);
+        setError('상담사가 포트폴리오 리밸런싱을 제안했습니다.');
+        setTimeout(() => setError(''), 5000);
+      } else if (message.type === 'PORTFOLIO_REBALANCING_APPROVED') {
+        setProposedSimulation(null);
+        setError('고객이 리밸런싱을 승인했습니다. 실행을 진행합니다.');
+        setTimeout(() => setError(''), 5000);
+      } else if (message.type === 'PORTFOLIO_REBALANCING_REJECTED') {
+        setProposedSimulation(null);
+        setError('고객이 리밸런싱을 거부했습니다.');
+        setTimeout(() => setError(''), 5000);
+      }
     });
 
     WebSocketService.onOffer(async (offer) => {
@@ -317,6 +336,43 @@ const VideoCall: React.FC = () => {
       setError('상담 정보를 불러올 수 없습니다.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 리밸런싱 관련 핸들러 함수들
+  const handleSimulationProposed = (simulation: RebalancingSimulationResponse) => {
+    if (callState.roomId && targetUser) {
+      WebSocketService.sendPortfolioRebalancing({
+        type: 'PORTFOLIO_REBALANCING_PROPOSED',
+        roomId: callState.roomId,
+        senderId: currentUser.id,
+        receiverId: targetUser.id,
+        data: simulation
+      });
+    }
+  };
+
+  const handleSimulationApproved = (jobId: number) => {
+    if (callState.roomId && targetUser) {
+      WebSocketService.sendPortfolioRebalancing({
+        type: 'PORTFOLIO_REBALANCING_APPROVED',
+        roomId: callState.roomId,
+        senderId: currentUser.id,
+        receiverId: targetUser.id,
+        data: { jobId }
+      });
+    }
+  };
+
+  const handleSimulationRejected = (jobId: number) => {
+    if (callState.roomId && targetUser) {
+      WebSocketService.sendPortfolioRebalancing({
+        type: 'PORTFOLIO_REBALANCING_REJECTED',
+        roomId: callState.roomId,
+        senderId: currentUser.id,
+        receiverId: targetUser.id,
+        data: { jobId }
+      });
     }
   };
 
@@ -882,6 +938,10 @@ const VideoCall: React.FC = () => {
                   currentUserRole={currentUser.role}
                   targetUserId={targetUser.id}
                   isInCall={callState.isInCall}
+                  proposedSimulation={proposedSimulation}
+                  onSimulationProposed={handleSimulationProposed}
+                  onSimulationApproved={handleSimulationApproved}
+                  onSimulationRejected={handleSimulationRejected}
                 />
               )}
             </div>

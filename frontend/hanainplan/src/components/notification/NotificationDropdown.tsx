@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
+import NotificationModal from '../common/NotificationModal';
 import {
   fetchNotificationSummary,
   fetchUnreadNotifications,
@@ -26,6 +28,17 @@ function NotificationDropdown({
   onCloseModal
 }: NotificationDropdownProps) {
   const queryClient = useQueryClient();
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const getCurrentUserId = (): number | undefined => {
     try {
@@ -73,13 +86,18 @@ function NotificationDropdown({
       const result = await markNotificationAsRead(notificationId);
       return result;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['notificationSummary'] });
       queryClient.invalidateQueries({ queryKey: ['unreadNotifications'] });
       onCloseModal();
     },
-    onError: (error, variables) => {
-      alert('읽음 처리 중 오류가 발생했습니다.');
+    onError: (_error, _variables) => {
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '읽음 처리 실패',
+        message: '읽음 처리 중 오류가 발생했습니다.'
+      });
     },
   });
 
@@ -368,6 +386,15 @@ function NotificationDropdown({
         </div>,
         document.body
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </>
   );
 }

@@ -30,7 +30,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
 
-    @Value("${external.api.identity-verification.base-url:http://localhost:8084}")
+    @Value("${external.api.identity-verification.base-url:https://user-production-3188.up.railway.app}")
     private String identityVerificationBaseUrl;
 
     @Autowired

@@ -85,6 +85,7 @@ public class SignUpRequestDto {
         private String industryName;
         private Integer careerYears;
         private String assetLevel;
+        private Boolean isHighIncome; // true: 5,500만원 이상, false: 5,500만원 미만
     }
 
     @Data

@@ -2,6 +2,7 @@ package com.hanainplan.kookmin.account.controller;
 
 import com.hanainplan.kookmin.account.dto.AccountRequestDto;
 import com.hanainplan.kookmin.account.dto.AccountResponseDto;
+import com.hanainplan.kookmin.account.dto.TransactionRequestDto;
 import com.hanainplan.kookmin.account.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +84,31 @@ public class AccountController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PostMapping("/transactions")
+    public ResponseEntity<Map<String, Object>> createTransaction(@Valid @RequestBody TransactionRequestDto request) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String transactionId = accountService.createTransaction(request);
+
+            response.put("success", true);
+            response.put("message", "거래내역이 생성되었습니다");
+            response.put("transactionId", transactionId);
+            response.put("accountNumber", request.getAccountNumber());
+            response.put("transactionType", request.getTransactionType());
+            response.put("amount", request.getAmount());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "거래내역 생성 중 오류가 발생했습니다: " + e.getMessage());
+            response.put("accountNumber", request.getAccountNumber());
+
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

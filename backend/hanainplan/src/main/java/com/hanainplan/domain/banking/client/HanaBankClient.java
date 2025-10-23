@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "hana-bank", url = "${bank.hana.base-url:http://localhost:8081}")
+@FeignClient(name = "hana-bank", url = "${bank.hana.base-url:https://hana-production.up.railway.app}")
 public interface HanaBankClient {
 
     @PostMapping("/api/v1/irp/open")

@@ -11,10 +11,12 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
-                    "http://localhost:3000",
+                    "https://frontend-six-ecru-94.vercel.app",
                     "http://localhost:5173",
+                    "http://localhost:3000",
+                    "http://127.0.0.1:5173",
                     "http://127.0.0.1:3000",
-                    "http://127.0.0.1:5173"
+                    "http://192.168.217.239:5173"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
@@ -22,3 +24,5 @@ public class CorsConfig implements WebMvcConfigurer {
                 .maxAge(3600);
     }
 }
+
+

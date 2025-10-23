@@ -26,6 +26,9 @@ export const MessageType = {
   CONSULTATION_NOTE_SYNC: 'CONSULTATION_NOTE_SYNC',
   USER_JOINED: 'USER_JOINED',
   USER_LEFT: 'USER_LEFT',
+  PORTFOLIO_REBALANCING_PROPOSED: 'PORTFOLIO_REBALANCING_PROPOSED',
+  PORTFOLIO_REBALANCING_APPROVED: 'PORTFOLIO_REBALANCING_APPROVED',
+  PORTFOLIO_REBALANCING_REJECTED: 'PORTFOLIO_REBALANCING_REJECTED',
   ERROR: 'ERROR'
 } as const;
 
@@ -69,24 +72,25 @@ class WebSocketService {
   private onOfferCallback?: (message: SDPMessage) => void;
   private onAnswerCallback?: (message: SDPMessage) => void;
   private onIceCandidateCallback?: (message: ICECandidateMessage) => void;
-  private onHighlightSyncCallback?: (message: WebRTCMessage) => void;
+  // private onHighlightSyncCallback?: (message: WebRTCMessage) => void;
   private onStepSyncCallback?: (message: WebRTCMessage) => void;
   private onConsultationStepSyncCallback?: (message: WebRTCMessage) => void;
   private onConsultationNoteSyncCallback?: (message: WebRTCMessage) => void;
+  private onPortfolioRebalancingCallback?: (message: WebRTCMessage) => void;
   private onConnectionStateChangeCallback?: (connected: boolean) => void;
 
   constructor() {
     this.client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
+      webSocketFactory: () => new SockJS('https://hanainplan.kro.kr/ws'),
       connectHeaders: {},
-      debug: (str) => {
+      debug: (_str) => {
       },
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
     });
 
-    this.client.onConnect = (frame) => {
+    this.client.onConnect = (_frame) => {
       this.isConnected = true;
       this.onConnectionStateChangeCallback?.(true);
       this.subscribeToMessages();
@@ -97,7 +101,7 @@ class WebSocketService {
       this.onConnectionStateChangeCallback?.(false);
     };
 
-    this.client.onStompError = (frame) => {
+    this.client.onStompError = (_frame) => {
       this.isConnected = false;
       this.onConnectionStateChangeCallback?.(false);
     };
@@ -193,6 +197,11 @@ class WebSocketService {
     this.client.subscribe('/user/queue/consultation-note-sync', (message: Message) => {
       const syncMessage: WebRTCMessage = JSON.parse(message.body);
       this.onConsultationNoteSyncCallback?.(syncMessage);
+    });
+
+    this.client.subscribe('/user/queue/portfolio-rebalancing', (message: Message) => {
+      const rebalancingMessage: WebRTCMessage = JSON.parse(message.body);
+      this.onPortfolioRebalancingCallback?.(rebalancingMessage);
     });
   }
 
@@ -295,6 +304,14 @@ class WebSocketService {
     });
   }
 
+  sendPortfolioRebalancing(message: WebRTCMessage): void {
+    if (!this.client || !this.isConnected) return;
+    this.client.publish({
+      destination: '/app/portfolio.rebalancing',
+      body: JSON.stringify(message)
+    });
+  }
+
   onCallRequest(callback: (message: CallRequestMessage) => void): void {
     this.onCallRequestCallback = callback;
   }
@@ -331,9 +348,9 @@ class WebSocketService {
     this.onConnectionStateChangeCallback = callback;
   }
 
-  onHighlightSync(callback: (message: WebRTCMessage) => void): void {
-    this.onHighlightSyncCallback = callback;
-  }
+  // onHighlightSync(callback: (message: WebRTCMessage) => void): void {
+  //   this.onHighlightSyncCallback = callback;
+  // }
 
   onStepSync(callback: (message: WebRTCMessage) => void): void {
     this.onStepSyncCallback = callback;
@@ -345,6 +362,10 @@ class WebSocketService {
 
   onConsultationNoteSync(callback: (message: WebRTCMessage) => void): void {
     this.onConsultationNoteSyncCallback = callback;
+  }
+
+  onPortfolioRebalancing(callback: (message: WebRTCMessage) => void): void {
+    this.onPortfolioRebalancingCallback = callback;
   }
 
   getConnectionStatus(): boolean {

@@ -14,7 +14,9 @@ import com.hanainplan.domain.banking.repository.AccountRepository;
 import com.hanainplan.domain.banking.repository.IrpAccountRepository;
 import com.hanainplan.domain.banking.repository.TransactionRepository;
 import com.hanainplan.domain.user.entity.User;
+import com.hanainplan.domain.user.entity.Customer;
 import com.hanainplan.domain.user.repository.UserRepository;
+import com.hanainplan.domain.user.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,7 @@ public class IrpIntegrationServiceImpl implements IrpIntegrationService {
 
     private final IrpAccountRepository irpAccountRepository;
     private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final HanaBankClient hanaBankClient;
     private final KookminBankClient kookminBankClient;
     private final ShinhanBankClient shinhanBankClient;
@@ -225,6 +228,19 @@ public class IrpIntegrationServiceImpl implements IrpIntegrationService {
 
             log.info("[HanaInPlan] 연결 주계좌 출금 완료 - 계좌: {}, 출금액: {}원, 남은 잔액: {}원", 
                     request.getLinkedMainAccount(), initialDepositAmount, newLinkedBalance);
+
+            // Customer의 riskProfileType 업데이트
+            Customer customer = customerRepository.findById(request.getCustomerId())
+                    .orElseThrow(() -> new RuntimeException("고객을 찾을 수 없습니다: " + request.getCustomerId()));
+            
+            Customer.RiskProfileType riskProfileType = Customer.RiskProfileType.fromString(request.getInvestmentStyle());
+            customer.setRiskProfileType(riskProfileType);
+            customer.setHasIrpAccount(true);
+            customer.setIrpAccountNumber(realAccountNumber);
+            customerRepository.save(customer);
+            
+            log.info("고객 리스크 프로파일 업데이트 완료 - 고객 ID: {}, 투자성향: {}", 
+                    request.getCustomerId(), riskProfileType);
 
             IrpAccount account = IrpAccount.builder()
                     .customerId(request.getCustomerId())

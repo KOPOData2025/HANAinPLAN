@@ -18,7 +18,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("로컬 개발 서버"),
-                        new Server().url("https://api.hanainplan.com").description("운영 서버")
+                        new Server().url("https://3.220.121.191:8080").description("운영 서버")
                 ))
                 .info(new Info()
                         .title("하나인플랜 API")

@@ -38,12 +38,12 @@ kakao:
 # User 서버 설정
 user:
   server:
-    url: ${USER_SERVER_URL:http://localhost:8084}
+    url: ${USER_SERVER_URL:https://user-production-3188.up.railway.app}
 
 # 애플리케이션 설정
 app:
   name: 하나인플랜
-  base-url: ${APP_BASE_URL:http://localhost:5173}
+  base-url: ${APP_BASE_URL:https://frontend-six-ecru-94.vercel.app/}
 
 # 펀드 크롤러 설정
 fund:
@@ -55,4 +55,8 @@ fund:
 # 은행 서버 설정
 bank:
   hana:
-    url: ${HANA_BANK_URL:http://localhost:8081}
+    url: ${HANA_BANK_URL:https://hana-production.up.railway.app}
+  kookmin:
+    url: ${KOOKMIN_BANK_URL:https://kookmin-production.up.railway.app}
+  shinhan:
+    url: ${SHINHAN_BANK_URL:https://shinhan-production.up.railway.app}

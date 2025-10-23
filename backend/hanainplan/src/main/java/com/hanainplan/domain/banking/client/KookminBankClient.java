@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@FeignClient(name = "kookmin-bank", url = "${bank.kookmin.base-url:http://localhost:8082}")
+@FeignClient(name = "kookmin-bank", url = "${bank.kookmin.url:http://localhost:8083}")
 public interface KookminBankClient {
 
     @PostMapping("/api/kookmin/product/financial/subscribe")

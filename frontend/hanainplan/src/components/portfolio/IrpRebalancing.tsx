@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import NotificationModal from '../common/NotificationModal';
 import { 
-  simulateRebalancing, 
   simulateRecommendedRebalancing,
   simulateCustomRebalancing,
   approveRebalancing, 
-  getRebalancingStatus,
   getSimilarUserPortfolio,
   type RebalancingSimulationResponse,
   type PortfolioSnapshot,
-  type RebalancingOrder
+  type RebalancingOrder,
+  type PortfolioRecommendationResponse
 } from '../../api/rebalancingApi';
+import { getIrpPortfolioSummary, type IrpPortfolioSummary } from '../../api/portfolioApi';
 
 interface IrpRebalancingProps {
   customerId: number;
@@ -25,38 +26,80 @@ const COLORS = {
 
 const COLORS_ARRAY = [COLORS.cash, COLORS.deposit, COLORS.fund];
 
-export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpRebalancingProps) {
+export default function IrpRebalancing({ customerId, irpAccountNumber: _irpAccountNumber }: IrpRebalancingProps) {
   const [simulation, setSimulation] = useState<RebalancingSimulationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [recommendedWeights, setRecommendedWeights] = useState<{cashWeight: number, depositWeight: number, fundWeight: number} | null>(null);
+  const [recommendation, setRecommendation] = useState<PortfolioRecommendationResponse | null>(null);
+  const [currentPortfolio, setCurrentPortfolio] = useState<IrpPortfolioSummary | null>(null);
   const [customWeights, setCustomWeights] = useState({
     cashWeight: 5,
     depositWeight: 40,
     fundWeight: 55
   });
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
-  // 추천 포트폴리오 조회
+  // 현재 포트폴리오 조회
   useEffect(() => {
-    const fetchRecommendedWeights = async () => {
+    const fetchCurrentPortfolio = async () => {
       try {
-        const recommendation = await getSimilarUserPortfolio(customerId);
-        setRecommendedWeights({
-          cashWeight: recommendation.cashWeight,
-          depositWeight: recommendation.depositWeight,
-          fundWeight: recommendation.fundWeight
-        });
+        const portfolioSummary = await getIrpPortfolioSummary(customerId);
+        setCurrentPortfolio(portfolioSummary);
       } catch (error) {
-        console.error('추천 포트폴리오 조회 실패:', error);
+        console.error('포트폴리오 데이터 조회 실패:', error);
       }
     };
 
-    fetchRecommendedWeights();
+    if (customerId) {
+      fetchCurrentPortfolio();
+    }
+  }, [customerId]);
+
+  // 추천 포트폴리오 조회
+  useEffect(() => {
+    const fetchRecommendation = async () => {
+      try {
+        const recommendationData = await getSimilarUserPortfolio(customerId);
+        setRecommendation(recommendationData);
+        
+        // 추천 포트폴리오로 커스텀 가중치 초기화 (안전한 접근)
+        if (recommendationData?.recommendedPortfolio) {
+          setCustomWeights({
+            cashWeight: recommendationData.recommendedPortfolio.cashWeight || 5,
+            depositWeight: recommendationData.recommendedPortfolio.depositWeight || 40,
+            fundWeight: recommendationData.recommendedPortfolio.fundWeight || 55
+          });
+        }
+      } catch (error) {
+        console.error('추천 포트폴리오 조회 실패:', error);
+        // 기본값으로 설정
+        setCustomWeights({
+          cashWeight: 5,
+          depositWeight: 40,
+          fundWeight: 55
+        });
+      }
+    };
+
+    fetchRecommendation();
   }, [customerId]);
 
   // 리밸런싱 시뮬레이션 실행
   const handleSimulateRebalancing = async (type: 'recommended' | 'custom') => {
     setIsLoading(true);
+    // 이전 시뮬레이션 결과 초기화
+    setSimulation(null);
+    
     try {
       let response: RebalancingSimulationResponse;
       
@@ -74,7 +117,12 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
       setSimulation(response);
     } catch (error) {
       console.error('리밸런싱 시뮬레이션 실패:', error);
-      alert('리밸런싱 시뮬레이션에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '시뮬레이션 실패',
+        message: '리밸런싱 시뮬레이션에 실패했습니다.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -88,31 +136,136 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
     try {
       const response = await approveRebalancing(simulation.jobId);
       setSimulation(response);
-      alert('리밸런싱이 성공적으로 실행되었습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: '리밸런싱 완료',
+        message: '리밸런싱이 성공적으로 실행되었습니다.'
+      });
     } catch (error) {
       console.error('리밸런싱 실행 실패:', error);
-      alert('리밸런싱 실행에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '실행 실패',
+        message: '리밸런싱 실행에 실패했습니다.'
+      });
     } finally {
       setIsExecuting(false);
     }
   };
 
   // 포트폴리오 차트 데이터 변환
-  const getPortfolioChartData = (portfolio: PortfolioSnapshot) => [
-    { name: '현금', value: portfolio.cashWeight, amount: portfolio.cashAmount },
-    { name: '예금', value: portfolio.depositWeight, amount: portfolio.depositAmount },
-    { name: '펀드', value: portfolio.fundWeight, amount: portfolio.fundAmount }
-  ];
+  const getPortfolioChartData = (portfolio: PortfolioSnapshot | null) => {
+    if (!portfolio) {
+      return [
+        { name: '현금', value: 0, amount: 0, timestamp: Date.now() },
+        { name: '예금', value: 0, amount: 0, timestamp: Date.now() },
+        { name: '펀드', value: 0, amount: 0, timestamp: Date.now() }
+      ];
+    }
+    // 새로운 객체를 생성하여 참조 변경으로 리렌더링 강제
+    const timestamp = Date.now();
+    return [
+      { name: '현금', value: portfolio.cashWeight || 0, amount: portfolio.cashAmount || 0, timestamp },
+      { name: '예금', value: portfolio.depositWeight || 0, amount: portfolio.depositAmount || 0, timestamp },
+      { name: '펀드', value: portfolio.fundWeight || 0, amount: portfolio.fundAmount || 0, timestamp }
+    ];
+  };
+
+  // 현재 포트폴리오 차트 데이터 변환
+  const getCurrentPortfolioChartData = () => {
+    if (!currentPortfolio) {
+      return [
+        { name: '현금', value: 100, amount: 0, color: COLORS.cash },
+        { name: '예금', value: 0, amount: 0, color: COLORS.deposit },
+        { name: '펀드', value: 0, amount: 0, color: COLORS.fund }
+      ];
+    }
+
+    const totalValue = currentPortfolio.totalValue || 0;
+    const cashAmount = currentPortfolio.cash?.amount || 0;
+    const depositAmount = currentPortfolio.deposit?.amount || 0;
+    const fundAmount = currentPortfolio.fund?.amount || 0;
+
+    return [
+      { 
+        name: '현금', 
+        value: totalValue > 0 ? (cashAmount / totalValue) * 100 : 0, 
+        amount: cashAmount, 
+        color: COLORS.cash 
+      },
+      { 
+        name: '예금', 
+        value: totalValue > 0 ? (depositAmount / totalValue) * 100 : 0, 
+        amount: depositAmount, 
+        color: COLORS.deposit 
+      },
+      { 
+        name: '펀드', 
+        value: totalValue > 0 ? (fundAmount / totalValue) * 100 : 0, 
+        amount: fundAmount, 
+        color: COLORS.fund 
+      }
+    ];
+  };
 
   // 리밸런싱 주문 차트 데이터
-  const getOrdersChartData = (orders: RebalancingOrder[]) => {
+  const getOrdersChartData = (orders: RebalancingOrder[] | null | undefined) => {
+    if (!orders || orders.length === 0) {
+      return [
+        { name: '매수', count: 0, amount: 0, timestamp: Date.now() },
+        { name: '매도', count: 0, amount: 0, timestamp: Date.now() }
+      ];
+    }
+    
     const buyOrders = orders.filter(order => order.orderType === 'BUY');
     const sellOrders = orders.filter(order => order.orderType === 'SELL');
+    const timestamp = Date.now();
     
     return [
-      { name: '매수', count: buyOrders.length, amount: buyOrders.reduce((sum, order) => sum + order.orderAmount, 0) },
-      { name: '매도', count: sellOrders.length, amount: sellOrders.reduce((sum, order) => sum + order.orderAmount, 0) }
+      { name: '매수', count: buyOrders.length, amount: buyOrders.reduce((sum, order) => sum + (order.orderAmount || 0), 0), timestamp },
+      { name: '매도', count: sellOrders.length, amount: sellOrders.reduce((sum, order) => sum + (order.orderAmount || 0), 0), timestamp }
     ];
+  };
+
+  // 사용자 지정 포트폴리오 평가
+  const evaluateCustomPortfolio = (customWeights: {cashWeight: number, depositWeight: number, fundWeight: number}) => {
+    if (!recommendation) return null;
+
+    const recommended = recommendation.recommendedPortfolio;
+    const totalDeviation = Math.abs(customWeights.cashWeight - recommended.cashWeight) +
+                          Math.abs(customWeights.depositWeight - recommended.depositWeight) +
+                          Math.abs(customWeights.fundWeight - recommended.fundWeight);
+
+    let riskLevel = '적정';
+    let riskDescription = '추천 포트폴리오와 유사한 수준입니다.';
+    let colorClass = 'text-green-600';
+
+    if (totalDeviation > 30) {
+      riskLevel = '높음';
+      riskDescription = '추천 포트폴리오와 큰 차이가 있습니다. 리스크를 고려해보세요.';
+      colorClass = 'text-red-600';
+    } else if (totalDeviation > 15) {
+      riskLevel = '보통';
+      riskDescription = '추천 포트폴리오와 어느 정도 차이가 있습니다.';
+      colorClass = 'text-yellow-600';
+    }
+
+    // 펀드 비중 체크
+    if (customWeights.fundWeight > 70) {
+      riskLevel = '높음';
+      riskDescription = '펀드 비중이 70%를 초과합니다. IRP 규정을 확인해주세요.';
+      colorClass = 'text-red-600';
+    }
+
+    return {
+      riskLevel,
+      riskDescription,
+      colorClass,
+      totalDeviation,
+      fundWeightExceeded: customWeights.fundWeight > 70
+    };
   };
 
   return (
@@ -125,25 +278,109 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
         </div>
       </div>
 
+      {/* 현재 포트폴리오 섹션 */}
+      {currentPortfolio && (
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+            <h3 className="text-lg font-hana-bold text-gray-900 mb-6">현재 자산 비중</h3>
+            
+            {/* 현재 포트폴리오 비중 - 원형 차트와 항목별 비중 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+              {/* 좌측: 원형 차트 */}
+              <div className="w-full h-64 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getCurrentPortfolioChartData()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={0}
+                      dataKey="value"
+                    >
+                      {getCurrentPortfolioChartData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number, entry: any) => [
+                        `${value.toFixed(1)}%`, 
+                        `${entry.payload?.name || 'Unknown'} (${entry.payload?.amount?.toLocaleString() || '0'}원)`
+                      ]}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontFamily: 'Hana2-Regular'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* 우측: 항목별 비중 */}
+              <div className="space-y-4">
+                {getCurrentPortfolioChartData().map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <div className="flex items-center">
+                      <div 
+                        className="w-4 h-4 rounded-full mr-3" 
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                      <span className="font-hana-medium text-gray-700">{item.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-hana-bold text-gray-900">{item.value.toFixed(1)}%</div>
+                      <div className="text-sm text-gray-500">{item.amount.toLocaleString()}원</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 총 자산 */}
+            <div className="text-center pt-4 border-t border-gray-300">
+              <div className="text-lg font-hana-medium text-gray-800">
+                총 IRP 자산: <span className="font-hana-bold text-gray-900">{(currentPortfolio?.totalValue || 0).toLocaleString()}원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 추천 포트폴리오 섹션 */}
-      {recommendedWeights && (
+      {recommendation && (
         <div className="mb-8">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
             <h3 className="text-lg font-hana-bold text-blue-900 mb-4">추천 포트폴리오 비중</h3>
-            <div className="grid grid-cols-3 gap-4">
+            
+            {/* 리스크 프로필 정보 */}
+            <div className="mb-4 p-3 bg-blue-100 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-blue-800">리스크 프로필</div>
+                  <div className="text-lg font-hana-bold text-blue-900">{recommendation.riskProfileDescription}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 추천 포트폴리오 비중 */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center">
-                <div className="text-2xl font-hana-bold text-blue-600">{recommendedWeights.cashWeight.toFixed(1)}%</div>
+                <div className="text-2xl font-hana-bold text-blue-600">{(recommendation.recommendedPortfolio?.cashWeight || 0).toFixed(1)}%</div>
                 <div className="text-sm text-blue-700">현금</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-hana-bold text-blue-600">{recommendedWeights.depositWeight.toFixed(1)}%</div>
+                <div className="text-2xl font-hana-bold text-blue-600">{(recommendation.recommendedPortfolio?.depositWeight || 0).toFixed(1)}%</div>
                 <div className="text-sm text-blue-700">예금</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-hana-bold text-blue-600">{recommendedWeights.fundWeight.toFixed(1)}%</div>
+                <div className="text-2xl font-hana-bold text-blue-600">{(recommendation.recommendedPortfolio?.fundWeight || 0).toFixed(1)}%</div>
                 <div className="text-sm text-blue-700">펀드</div>
               </div>
             </div>
+
             <button
               onClick={() => handleSimulateRebalancing('recommended')}
               disabled={isLoading}
@@ -197,6 +434,30 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
           <div className="text-sm text-green-700 mb-4">
             총 비중: {(customWeights.cashWeight + customWeights.depositWeight + customWeights.fundWeight).toFixed(1)}%
           </div>
+
+          {/* 사용자 지정 포트폴리오 평가 */}
+          {evaluateCustomPortfolio(customWeights) && (
+            <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-medium text-green-800">포트폴리오 평가</div>
+                <div className={`text-sm font-hana-bold ${evaluateCustomPortfolio(customWeights)?.colorClass}`}>
+                  {evaluateCustomPortfolio(customWeights)?.riskLevel}
+                </div>
+              </div>
+              <div className="text-sm text-green-700 mb-2">
+                {evaluateCustomPortfolio(customWeights)?.riskDescription}
+              </div>
+              {evaluateCustomPortfolio(customWeights)?.fundWeightExceeded && (
+                <div className="text-sm text-red-600 font-medium">
+                  ⚠️ 펀드 비중이 IRP 규정(70%)을 초과합니다.
+                </div>
+              )}
+              <div className="text-xs text-green-600 mt-2">
+                추천 대비 편차: {evaluateCustomPortfolio(customWeights)?.totalDeviation.toFixed(1)}%p
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => handleSimulateRebalancing('custom')}
             disabled={isLoading || Math.abs(customWeights.cashWeight + customWeights.depositWeight + customWeights.fundWeight - 100) > 0.1}
@@ -217,17 +478,17 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div>
                 <h4 className="text-md font-hana-medium text-gray-700 mb-3">현재 포트폴리오</h4>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={200} key={`current-${simulation?.jobId || 'empty'}`}>
                   <PieChart>
                     <Pie
-                      data={getPortfolioChartData(simulation.currentPortfolio)}
+                      data={getPortfolioChartData(simulation?.currentPortfolio)}
                       cx="50%"
                       cy="50%"
                       innerRadius={40}
                       outerRadius={80}
                       dataKey="value"
                     >
-                      {getPortfolioChartData(simulation.currentPortfolio).map((entry, index) => (
+                      {getPortfolioChartData(simulation?.currentPortfolio).map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS_ARRAY[index]} />
                       ))}
                     </Pie>
@@ -238,17 +499,17 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
               
               <div>
                 <h4 className="text-md font-hana-medium text-gray-700 mb-3">목표 포트폴리오</h4>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={200} key={`target-${simulation?.jobId || 'empty'}`}>
                   <PieChart>
                     <Pie
-                      data={getPortfolioChartData(simulation.targetPortfolio)}
+                      data={getPortfolioChartData(simulation?.targetPortfolio)}
                       cx="50%"
                       cy="50%"
                       innerRadius={40}
                       outerRadius={80}
                       dataKey="value"
                     >
-                      {getPortfolioChartData(simulation.targetPortfolio).map((entry, index) => (
+                      {getPortfolioChartData(simulation?.targetPortfolio).map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS_ARRAY[index]} />
                       ))}
                     </Pie>
@@ -259,17 +520,17 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
               
               <div>
                 <h4 className="text-md font-hana-medium text-gray-700 mb-3">예상 포트폴리오</h4>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={200} key={`expected-${simulation?.jobId || 'empty'}`}>
                   <PieChart>
                     <Pie
-                      data={getPortfolioChartData(simulation.expectedPortfolio)}
+                      data={getPortfolioChartData(simulation?.expectedPortfolio)}
                       cx="50%"
                       cy="50%"
                       innerRadius={40}
                       outerRadius={80}
                       dataKey="value"
                     >
-                      {getPortfolioChartData(simulation.expectedPortfolio).map((entry, index) => (
+                      {getPortfolioChartData(simulation?.expectedPortfolio).map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS_ARRAY[index]} />
                       ))}
                     </Pie>
@@ -280,11 +541,11 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
             </div>
 
             {/* 리밸런싱 주문 정보 */}
-            {simulation.orders && simulation.orders.length > 0 && (
+            {simulation?.orders && simulation.orders.length > 0 && (
               <div className="mb-6">
                 <h4 className="text-md font-hana-medium text-gray-700 mb-3">리밸런싱 주문</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={getOrdersChartData(simulation.orders)}>
+                <ResponsiveContainer width="100%" height={200} key={`orders-${simulation?.jobId || 'empty'}`}>
+                  <BarChart data={getOrdersChartData(simulation?.orders)}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -296,7 +557,7 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
                 </ResponsiveContainer>
                 
                 <div className="mt-4 space-y-2">
-                  {simulation.orders.map((order, index) => (
+                  {simulation?.orders?.map((order, index) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-white rounded-lg border">
                       <div className="flex items-center">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -320,34 +581,34 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
                 <div className="text-sm text-yellow-700 mb-1">예상 수수료</div>
-                <div className="text-xl font-hana-bold text-yellow-800">{simulation.totalFee.toLocaleString()}원</div>
+                <div className="text-xl font-hana-bold text-yellow-800">{(simulation?.totalFee || 0).toLocaleString()}원</div>
               </div>
               <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                 <div className="text-sm text-purple-700 mb-1">총 주문 금액</div>
-                <div className="text-xl font-hana-bold text-purple-800">{simulation.totalOrderAmount.toLocaleString()}원</div>
+                <div className="text-xl font-hana-bold text-purple-800">{(simulation?.totalOrderAmount || 0).toLocaleString()}원</div>
               </div>
             </div>
 
             {/* 실행 버튼 */}
-            {simulation.status === 'PENDING' && (
+            {simulation?.status === 'PENDING' && (
               <div className="flex gap-4">
-                <button
-                  onClick={handleApproveRebalancing}
-                  disabled={isExecuting}
-                  className="flex-1 bg-hana-green text-white py-3 px-6 rounded-lg font-hana-bold hover:bg-green-700 disabled:opacity-50"
-                >
-                  {isExecuting ? '리밸런싱 실행 중...' : '리밸런싱 실행'}
-                </button>
-                <button
-                  onClick={() => setSimulation(null)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-hana-medium hover:bg-gray-50"
-                >
-                  취소
-                </button>
+                    <button
+                      onClick={handleApproveRebalancing}
+                      disabled={isExecuting}
+                      className="flex-1 bg-hana-green text-white py-3 px-6 rounded-lg font-hana-bold hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {isExecuting ? '리밸런싱 실행 중...' : '리밸런싱 실행'}
+                    </button>
+                    <button
+                      onClick={() => setSimulation(null)}
+                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-hana-medium hover:bg-gray-50"
+                    >
+                      취소
+                    </button>
               </div>
             )}
 
-            {simulation.status === 'COMPLETED' && (
+            {simulation?.status === 'COMPLETED' && (
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <div className="text-green-800 font-hana-medium">리밸런싱이 성공적으로 완료되었습니다.</div>
               </div>
@@ -355,6 +616,15 @@ export default function IrpRebalancing({ customerId, irpAccountNumber }: IrpReba
           </div>
         </div>
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

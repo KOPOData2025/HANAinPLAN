@@ -30,7 +30,7 @@ function Step4CounselorBranchInfo({ branchInfo, onBranchInfoChange }: Step4Couns
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<PlaceSearchResult[]>([])
   const [showMap, setShowMap] = useState(true)
-  const [errors, setErrors] = useState<Partial<BranchInfo>>({})
+  const [_errors, _setErrors] = useState<Partial<BranchInfo>>({})
   const [mapMarkers, setMapMarkers] = useState<Array<{
     latitude: number;
     longitude: number;
@@ -142,41 +142,41 @@ function Step4CounselorBranchInfo({ branchInfo, onBranchInfoChange }: Step4Couns
     setSearchResults([])
   }
 
-  const handleInputChange = (field: keyof BranchInfo, value: string | number) => {
-    if (field === 'coordinates') return
+  // const _handleInputChange = (field: keyof BranchInfo, value: string | number) => {
+  //   if (field === 'coordinates') return
+  //
+  //   onBranchInfoChange({
+  //     ...branchInfo,
+  //     [field]: value
+  //   })
+  //
+  //   if (errors[field]) {
+  //     setErrors(prev => ({ ...prev, [field]: undefined }))
+  //   }
+  // }
 
-    onBranchInfoChange({
-      ...branchInfo,
-      [field]: value
-    })
+  // const _validateField = (field: keyof BranchInfo, value: any) => {
+  //   let error = ''
+  //
+  //   switch (field) {
+  //     case 'branchCode':
+  //       if (!value || !value.trim()) error = '지점코드를 선택해주세요.'
+  //       break
+  //     case 'branchName':
+  //       if (!value || !value.trim()) error = '지점명을 선택해주세요.'
+  //       break
+  //     case 'address':
+  //       if (!value || !value.trim()) error = '주소를 선택해주세요.'
+  //       break
+  //   }
+  //
+  //   setErrors(prev => ({ ...prev, [field]: error }))
+  //   return !error
+  // }
 
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
-  const validateField = (field: keyof BranchInfo, value: any) => {
-    let error = ''
-
-    switch (field) {
-      case 'branchCode':
-        if (!value || !value.trim()) error = '지점코드를 선택해주세요.'
-        break
-      case 'branchName':
-        if (!value || !value.trim()) error = '지점명을 선택해주세요.'
-        break
-      case 'address':
-        if (!value || !value.trim()) error = '주소를 선택해주세요.'
-        break
-    }
-
-    setErrors(prev => ({ ...prev, [field]: error }))
-    return !error
-  }
-
-  const handleBlur = (field: keyof BranchInfo) => {
-    validateField(field, branchInfo[field])
-  }
+  // const _handleBlur = (field: keyof BranchInfo) => {
+  //   validateField(field, branchInfo[field])
+  // }
 
   useEffect(() => {
   }, [])

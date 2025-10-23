@@ -36,8 +36,8 @@ public class IrpAccountOpenRequestDto {
     private Integer depositDay;
 
     @NotBlank(message = "투자성향은 필수입니다")
-    @Pattern(regexp = "^(CONSERVATIVE|MODERATE_CONSERVATIVE|MODERATE|AGGRESSIVE)$",
-             message = "투자성향은 CONSERVATIVE, MODERATE_CONSERVATIVE, MODERATE, AGGRESSIVE 중 하나여야 합니다")
+    @Pattern(regexp = "^(STABLE|STABLE_PLUS|NEUTRAL|AGGRESSIVE)$",
+             message = "투자성향은 STABLE, STABLE_PLUS, NEUTRAL, AGGRESSIVE 중 하나여야 합니다")
     private String investmentStyle;
 
     @NotBlank(message = "연결 주계좌는 필수입니다")

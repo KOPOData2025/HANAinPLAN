@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '../../components/layout/Layout';
-import { useUserStore } from '../../store/userStore';
 
 function IrpProducts() {
-  const { user } = useUserStore();
+  // const { _user } = useUserStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'regulations'>('overview');
 
   return (

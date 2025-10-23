@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Lottie from 'lottie-react';
 import { processMyDataConsent } from '../../api/userApi';
 import type { MyDataConsentRequest, BankAccountInfo } from '../../api/userApi';
 
@@ -24,9 +25,29 @@ const MyDataConsentModal: React.FC<MyDataConsentModalProps> = ({
   const [bankAccountInfo, setBankAccountInfo] = useState<BankAccountInfo[]>([]);
   const [totalAccounts, setTotalAccounts] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loadingAnimation, setLoadingAnimation] = useState<any>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // Lottie 애니메이션 로드
+  useEffect(() => {
+    const loadAnimation = async () => {
+      try {
+        const response = await fetch('/lottie/loading_roop.json');
+        const animationData = await response.json();
+        setLoadingAnimation(animationData);
+      } catch (error) {
+        console.error('Lottie 애니메이션 로드 실패:', error);
+      }
+    };
+
+    if (isOpen) {
+      loadAnimation();
+    }
+  }, [isOpen]);
 
   const handleSearchAccounts = async () => {
     setIsLoading(true);
+    
     try {
       const request: MyDataConsentRequest = {
         phoneNumber: personalInfo.phoneNumber,
@@ -35,14 +56,15 @@ const MyDataConsentModal: React.FC<MyDataConsentModalProps> = ({
         consentToMyDataCollection: true
       };
 
-      const data = await processMyDataConsent(request);
+      // API 호출과 최소 3초 대기를 동시에 실행
+      const [data] = await Promise.all([
+        processMyDataConsent(request),
+        new Promise(resolve => setTimeout(resolve, 3000)) // 3초 대기
+      ]);
+
+      // 계좌 정보 처리
       if (data.bankAccountInfo && data.bankAccountInfo.length > 0) {
-        data.bankAccountInfo.forEach((bank, bankIndex) => {
-          if (bank.accounts) {
-            bank.accounts.forEach((account, accountIndex) => {
-            });
-          }
-        });
+        // 계좌 정보가 성공적으로 조회됨
       }
       setBankAccountInfo(data.bankAccountInfo || []);
       setTotalAccounts(data.totalAccounts || 0);
@@ -54,8 +76,16 @@ const MyDataConsentModal: React.FC<MyDataConsentModalProps> = ({
     }
   };
 
-  const handleFinalConsent = () => {
-    onConsent(true, bankAccountInfo);
+  const handleFinalConsent = async () => {
+    setIsConfirming(true);
+    
+    try {
+      // 3초 대기 후 확인 처리
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      onConsent(true, bankAccountInfo);
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const getAccountTypeText = (type: number) => {
@@ -125,7 +155,37 @@ const MyDataConsentModal: React.FC<MyDataConsentModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative">
+        {/* 로딩 오버레이 */}
+        {(isLoading || isConfirming) && (
+          <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
+            <div className="text-center">
+              <div className="mb-4">
+                {loadingAnimation ? (
+                  <div className="w-32 h-32 mx-auto flex items-center justify-center">
+                    <Lottie 
+                      animationData={loadingAnimation} 
+                      loop={true}
+                      autoplay={true}
+                      style={{ width: '128px', height: '128px' }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                {isLoading ? '마이데이터를 연동하고 있습니다...' : '처리 중입니다...'}
+              </h3>
+              <p className="text-gray-600 text-sm">
+                {isLoading 
+                  ? '잠시만 기다려주세요. 각 은행사에서 계좌 정보를 조회하고 있습니다.' 
+                  : '잠시만 기다려주세요. 데이터를 처리하고 있습니다.'
+                }
+              </p>
+            </div>
+          </div>
+        )}
         {}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
@@ -301,8 +361,12 @@ const MyDataConsentModal: React.FC<MyDataConsentModalProps> = ({
           ) : (
             <button
               onClick={handleFinalConsent}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              disabled={isConfirming}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
+              {isConfirming && (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
               확인
             </button>
           )}

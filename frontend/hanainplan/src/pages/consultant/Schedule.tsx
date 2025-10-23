@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
+import NotificationModal from '../../components/common/NotificationModal';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -57,6 +58,17 @@ function ConsultantSchedule() {
     clientName: '',
     type: 'consultation' as 'consultation' | 'meeting' | 'other'
   });
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const queryClient = useQueryClient();
 
@@ -70,10 +82,20 @@ function ConsultantSchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
       closeModal();
-      alert('일정이 생성되었습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: '일정 생성 완료',
+        message: '일정이 생성되었습니다.'
+      });
     },
     onError: () => {
-      alert('일정 생성에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '일정 생성 실패',
+        message: '일정 생성에 실패했습니다.'
+      });
     }
   });
 
@@ -82,10 +104,20 @@ function ConsultantSchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
       setSelectedEvent(null);
-      alert('일정이 삭제되었습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: '일정 삭제 완료',
+        message: '일정이 삭제되었습니다.'
+      });
     },
     onError: () => {
-      alert('일정 삭제에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '일정 삭제 실패',
+        message: '일정 삭제에 실패했습니다.'
+      });
     }
   });
 
@@ -122,7 +154,12 @@ function ConsultantSchedule() {
     e.preventDefault();
 
     if (!selectedDate || !formData.title.trim()) {
-      alert('제목을 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '제목 입력 필요',
+        message: '제목을 입력해주세요.'
+      });
       return;
     }
 
@@ -402,6 +439,15 @@ function ConsultantSchedule() {
           )}
         </div>
       </div>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

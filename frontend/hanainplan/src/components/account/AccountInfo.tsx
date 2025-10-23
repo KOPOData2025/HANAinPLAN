@@ -3,12 +3,14 @@ import { type BankingAccount } from '../../api/bankingApi';
 import { useAccountStore } from '../../store/accountStore';
 import { getBankPatternByPattern } from '../../store/bankStore';
 import { formatAmount } from '../../utils/fundUtils';
+import type { RiskProfileResponse } from '../../api/productApi';
 
 interface AccountInfoProps {
   onTransferClick: () => void;
+  riskProfile?: RiskProfileResponse | null;
 }
 
-function AccountInfo({ onTransferClick }: AccountInfoProps) {
+function AccountInfo({ onTransferClick, riskProfile }: AccountInfoProps) {
   const {
     accounts,
     selectedAccountId,
@@ -192,21 +194,22 @@ function AccountInfo({ onTransferClick }: AccountInfoProps) {
                   <p className="text-sm opacity-80">{allAccountsData.irpAccount.accountNumber}</p>
                 </div>
               </div>
-              <button
-                className="bg-white/20 px-4 py-2 rounded-lg text-sm font-hana-medium hover:bg-white/30 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.href = '/portfolio';
-                }}
-              >
-                포트폴리오
-              </button>
             </div>
 
             {}
             <div className="text-right">
               <p className="text-3xl font-hana-bold">{formatAmount(allAccountsData.irpAccount.currentBalance)}원</p>
               <p className="text-sm opacity-80">IRP 계좌</p>
+              {riskProfile && (
+                <div className="mt-2">
+                  <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-hana-medium">
+                    {riskProfile.riskProfileType === 'STABLE' && '안정형'}
+                    {riskProfile.riskProfileType === 'STABLE_PLUS' && '안정추구형'}
+                    {riskProfile.riskProfileType === 'NEUTRAL' && '중립형'}
+                    {riskProfile.riskProfileType === 'AGGRESSIVE' && '적극형'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

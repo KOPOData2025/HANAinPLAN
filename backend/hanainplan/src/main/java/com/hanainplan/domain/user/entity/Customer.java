@@ -54,6 +54,9 @@ public class Customer {
     @Column(name = "asset_level")
     private AssetLevel assetLevel;
 
+    @Column(name = "is_high_income")
+    private Boolean isHighIncome; // true: 5,500만원 이상, false: 5,500만원 미만
+
     @Column(name = "has_irp_account")
     private Boolean hasIrpAccount;
 
@@ -154,6 +157,20 @@ public class Customer {
             } else {
                 return AGGRESSIVE;
             }
+        }
+
+        public static RiskProfileType fromString(String investmentStyle) {
+            if (investmentStyle == null) {
+                return STABLE_PLUS; // 기본값
+            }
+            
+            return switch (investmentStyle.toUpperCase()) {
+                case "STABLE" -> STABLE;
+                case "STABLE_PLUS" -> STABLE_PLUS;
+                case "NEUTRAL" -> NEUTRAL;
+                case "AGGRESSIVE" -> AGGRESSIVE;
+                default -> STABLE_PLUS; // 기본값
+            };
         }
     }
 

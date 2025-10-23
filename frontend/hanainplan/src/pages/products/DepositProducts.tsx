@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useUserStore } from '../../store/userStore';
 import InterestRateComparison from '../../components/products/InterestRateComparison';
+import NotificationModal from '../../components/common/NotificationModal';
 import {
   getAllDepositProducts,
   getOptimalDepositRecommendation,
@@ -23,11 +24,11 @@ function DepositProducts() {
   const [activeTab, setActiveTab] = useState<'products' | 'recommend'>('products');
 
   const [interestRates, setInterestRates] = useState<InterestRateInfo[]>([]);
-  const [selectedBank, setSelectedBank] = useState<string>('ALL');
+  const [_selectedBank, _setSelectedBank] = useState<string>('ALL');
 
-  const [depositProducts, setDepositProducts] = useState<DepositProduct[]>([]);
+  const [_depositProducts, setDepositProducts] = useState<DepositProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<DepositProduct | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
 
   const [recommendation, setRecommendation] = useState<OptimalDepositRecommendation | null>(null);
   const [recommendLoading, setRecommendLoading] = useState(false);
@@ -43,6 +44,17 @@ function DepositProducts() {
   const [showResultModal, setShowResultModal] = useState(false);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     fetchInterestRates();
@@ -68,7 +80,12 @@ function DepositProducts() {
         setDepositProducts(response.products);
       }
     } catch (error) {
-      alert('예금 상품 조회에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '조회 실패',
+        message: '예금 상품 조회에 실패했습니다.'
+      });
     } finally {
       setLoading(false);
     }
@@ -86,17 +103,32 @@ function DepositProducts() {
 
   const fetchRecommendation = async () => {
     if (!user?.userId) {
-      alert('로그인이 필요합니다.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '로그인 필요',
+        message: '로그인이 필요합니다.'
+      });
       return;
     }
 
     if (!hasIrpAccount) {
-      alert('IRP 계좌를 먼저 개설해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: 'IRP 계좌 필요',
+        message: 'IRP 계좌를 먼저 개설해주세요.'
+      });
       return;
     }
 
     if (!retirementDate || !depositAmount || depositAmount <= 0) {
-      alert('은퇴 예정일과 예치 희망 금액을 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '정보 입력 필요',
+        message: '은퇴 예정일과 예치 희망 금액을 입력해주세요.'
+      });
       return;
     }
 
@@ -114,7 +146,12 @@ function DepositProducts() {
         setRecommendation(response.recommendation);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '추천 조회에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '추천 조회 실패',
+        message: error.response?.data?.message || '추천 조회에 실패했습니다.'
+      });
     } finally {
       setRecommendLoading(false);
     }
@@ -122,7 +159,12 @@ function DepositProducts() {
 
   const openConfirmModal = () => {
     if (!recommendation || !user || !irpAccount) {
-      alert('가입 정보가 부족합니다.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '가입 정보 부족',
+        message: '가입 정보가 부족합니다.'
+      });
       return;
     }
     setShowConfirmModal(true);
@@ -143,7 +185,12 @@ function DepositProducts() {
         if (firstAccount) {
           linkedAccountNumber = firstAccount.accountNumber;
         } else {
-          alert('연결할 주계좌가 없습니다. 먼저 계좌를 개설해주세요.');
+          setNotification({
+            isOpen: true,
+            type: 'warning',
+            title: '주계좌 없음',
+            message: '연결할 주계좌가 없습니다. 먼저 계좌를 개설해주세요.'
+          });
           setSubscribing(false);
           return;
         }
@@ -169,7 +216,12 @@ function DepositProducts() {
         setRecommendation(null);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '예금 가입에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '예금 가입 실패',
+        message: error.response?.data?.message || '예금 가입에 실패했습니다.'
+      });
     } finally {
       setSubscribing(false);
     }
@@ -238,7 +290,6 @@ function DepositProducts() {
                       <ul className="space-y-2">
                         <li>• 안정적인 자산 증식</li>
                         <li>• 노후 자금 준비</li>
-                        <li>• AI 기반 최적 상품 추천</li>
                       </ul>
                     </div>
                   </div>
@@ -251,7 +302,7 @@ function DepositProducts() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-2xl font-hana-bold text-white mb-2">
-                        AI 맞춤 상품 추천
+                        맞춤 예금상품 컨설팅
                       </h3>
                       <p className="text-white/90">
                         은퇴 시점에 맞춰 최적의 금리로 안전하게 자산을 운용하세요.
@@ -277,17 +328,15 @@ function DepositProducts() {
 
           {activeTab === 'recommend' && (
             <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-3xl font-hana-bold text-gray-900 mb-6">AI 맞춤 상품 추천</h2>
+              <h2 className="text-3xl font-hana-bold text-gray-900 mb-6">고객 맞춤 예금상품 컨설팅</h2>
 
               {!recommendation ? (
                 <div className="max-w-2xl mx-auto">
                   <div className="mb-8 text-center">
-                    <svg className="mx-auto h-24 w-24 text-hana-green mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-gray-600 mb-2">
-                      은퇴 시점과 예치 희망 금액을 입력하시면<br />
-                      최고 금리의 정기예금 상품을 추천해드립니다.
+                    <img src="/character/happy.png" alt="recommendation" className="mx-auto h-32 w-32 mb-4" />
+                    <p className="text-gray-600 font-hana-medium mb-2">
+                      고객님의 은퇴 시점과 예치 희망 금액을 입력하시면<br />
+                      최고 금리의 정기예금 상품을 추천해드려요.
                     </p>
                   </div>
 
@@ -324,7 +373,7 @@ function DepositProducts() {
                       </p>
                       {irpAccount && (
                         <p className="mt-1 text-xs text-blue-600">
-                          💡 현재 IRP 잔액: {irpAccount.currentBalance?.toLocaleString()}원
+                        현재 IRP 잔액: {irpAccount.currentBalance?.toLocaleString()}원
                         </p>
                       )}
                     </div>
@@ -493,12 +542,17 @@ function DepositProducts() {
                         if (hasIrpAccount) {
                           fetchRecommendation();
                         } else {
-                          alert('IRP 계좌를 먼저 개설해주세요.');
+                          setNotification({
+                            isOpen: true,
+                            type: 'warning',
+                            title: 'IRP 계좌 필요',
+                            message: 'IRP 계좌를 먼저 개설해주세요.'
+                          });
                         }
                       }}
                       className="w-full bg-hana-green text-white px-8 py-3 rounded-lg font-hana-medium hover:bg-green-600 transition-colors"
                     >
-                      AI 추천 받기
+                      추천 받기 🔍
                     </button>
                   </div>
                 </div>
@@ -679,6 +733,15 @@ function DepositProducts() {
           </div>
         </div>
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

@@ -21,9 +21,10 @@ interface DepositPortfolio {
 
 interface IrpProductsPortfolioProps {
   irpAccountNumber: string;
+  isInConsultation?: boolean;
 }
 
-function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
+function IrpProductsPortfolio({ irpAccountNumber, isInConsultation = false }: IrpProductsPortfolioProps) {
   const [portfolios, setPortfolios] = useState<DepositPortfolio[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -104,8 +105,7 @@ function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
     <div className="bg-white rounded-2xl shadow-lg p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-hana-bold text-gray-900">IRP 포트폴리오 구성 상품</h2>
-          <p className="text-sm text-gray-500 mt-1">IRP 계좌로 가입한 금융상품 내역</p>
+          <h2 className="text-2xl font-hana-bold text-gray-900">포트폴리오 구성 상품</h2>
         </div>
         <button
           onClick={() => {
@@ -149,11 +149,13 @@ function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
           </div>
 
           {}
-          <div className="space-y-4">
+          <div className={isInConsultation ? "space-y-4" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
             {portfolios.map((portfolio) => (
               <div
                 key={portfolio.portfolioId}
-                className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+                className={`border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow flex flex-col ${
+                  isInConsultation ? 'w-full' : 'h-full'
+                }`}
               >
                 {}
                 <div className="flex items-center justify-between mb-4">
@@ -164,7 +166,9 @@ function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
                       className="h-10 w-10 object-contain"
                     />
                     <div>
-                      <h3 className="text-lg font-hana-bold text-gray-900">{portfolio.productName}</h3>
+                      <h3 className="text-lg font-hana-bold text-gray-900">
+                        {portfolio.bankName} {portfolio.productName?.replace(/\([^)]*\)/g, '').trim()}
+                      </h3>
                       <p className="text-sm text-gray-500">{portfolio.bankName}</p>
                     </div>
                   </div>
@@ -172,7 +176,7 @@ function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
                 </div>
 
                 {}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className={isInConsultation ? "space-y-3" : "grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"}>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">투자 원금</p>
                     <p className="text-base font-hana-bold text-gray-900">{formatCurrency(portfolio.principalAmount)}</p>
@@ -183,11 +187,11 @@ function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">예상 이자</p>
-                    <p className="text-base font-hana-bold text-green-600">+{formatCurrency(portfolio.expectedInterest)}</p>
+                    <p className="text-base font-hana-bold text-hana-green">+{formatCurrency(portfolio.expectedInterest)}</p>  
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">만기 예상액</p>
-                    <p className="text-base font-hana-bold text-purple-600">{formatCurrency(portfolio.maturityAmount)}</p>
+                    <p className="text-base font-hana-bold">{formatCurrency(portfolio.maturityAmount)}</p>
                   </div>
                 </div>
 
@@ -201,23 +205,25 @@ function IrpProductsPortfolio({ irpAccountNumber }: IrpProductsPortfolioProps) {
                 </div>
 
                 {}
-                {portfolio.status === 'ACTIVE' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">운용 진행률</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-hana-medium text-gray-900">{portfolio.progressPercentage}%</span>
-                        <span className="text-xs text-gray-500">만기까지 {portfolio.daysRemaining}일</span>
+                <div className="mt-auto">
+                  {portfolio.status === 'ACTIVE' && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600">운용 진행률</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-hana-medium text-gray-900">{portfolio.progressPercentage}%</span>
+                          <span className="text-xs text-gray-500">만기까지 {portfolio.daysRemaining}일</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-hana-green to-green-400 h-2 rounded-full transition-all"
+                          style={{ width: `${portfolio.progressPercentage}%` }}
+                        ></div>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-hana-green to-green-400 h-2 rounded-full transition-all"
-                        style={{ width: `${portfolio.progressPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>

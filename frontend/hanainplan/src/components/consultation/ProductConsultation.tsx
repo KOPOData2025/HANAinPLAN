@@ -47,7 +47,7 @@ const ProductConsultation: React.FC<ProductConsultationProps> = ({
   currentUserId,
   currentUserRole,
   targetUserId,
-  isInCall
+  isInCall: _isInCall
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [idVerified, setIdVerified] = useState<boolean>(false);

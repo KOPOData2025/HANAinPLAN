@@ -18,6 +18,7 @@ import java.util.Optional;
 public class VerificationService {
 
     private final VerificationCodeRepository verificationCodeRepository;
+    private final SmsService smsService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional
@@ -34,6 +35,14 @@ public class VerificationService {
                     .build();
 
             verificationCodeRepository.save(verificationCode);
+
+            // SMS 전송 시도 (실패해도 인증번호는 정상 반환)
+            boolean smsSent = smsService.sendVerificationCode(phoneNumber, code);
+            if (smsSent) {
+                log.info("SMS 전송 성공: phoneNumber={}, code={}", phoneNumber, code);
+            } else {
+                log.warn("SMS 전송 실패했지만 인증번호는 정상 생성됨: phoneNumber={}, code={}", phoneNumber, code);
+            }
 
             log.info("인증번호 생성 완료: phoneNumber={}, code={}, expiresAt={}", 
                     phoneNumber, code, verificationCode.getExpiresAt());

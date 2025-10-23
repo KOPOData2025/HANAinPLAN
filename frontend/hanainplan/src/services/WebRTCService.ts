@@ -448,9 +448,7 @@ class WebRTCService {
       }
 
       this.screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          cursor: 'always' as any
-        },
+        video: true,
         audio: false
       });
 

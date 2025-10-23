@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useUserStore } from '../store/userStore'
 
-function KakaoCallback(): JSX.Element | null {
+function KakaoCallback(): React.JSX.Element | null {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { setUser } = useUserStore()
@@ -52,10 +52,15 @@ function KakaoCallback(): JSX.Element | null {
             userId: parseInt(data.id),
             phoneNumber: data.email || `kakao_${data.id}`,
             name: data.nickname,
+            email: data.email || '',
             userType: 'GENERAL',
+            gender: 'M',
+            birthDate: '',
+            loginType: 'KAKAO',
+            isPhoneVerified: false,
             isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdDate: new Date().toISOString(),
+            lastLoginDate: new Date().toISOString()
           })
 
           setSuccess(true)

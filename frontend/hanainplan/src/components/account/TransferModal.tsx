@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAccountStore } from '../../store/accountStore';
 import { getBankPatternByPattern } from '../../store/bankStore';
 import {
-  withdrawal,
   internalTransfer,
   getAllAccounts,
   verifyExternalAccount,
@@ -11,6 +10,7 @@ import {
 } from '../../api/bankingApi';
 import type { AccountVerificationResponse } from '../../api/bankingApi';
 import { useUserStore } from '../../store/userStore';
+import NotificationModal from '../common/NotificationModal';
 
 interface TransferModalProps {
   onClose: () => void;
@@ -25,6 +25,8 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showInsufficientBalanceModal, setShowInsufficientBalanceModal] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completeMessage, setCompleteMessage] = useState('');
   const [transferType, setTransferType] = useState<'external' | 'internal'>('external');
   const [selectedToAccountId, setSelectedToAccountId] = useState<number | null>(null);
   const [selectedToAccountNumber, setSelectedToAccountNumber] = useState<string | null>(null);
@@ -32,6 +34,17 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
   const [myAccounts, setMyAccounts] = useState<any[]>([]);
   const [verifiedAccount, setVerifiedAccount] = useState<AccountVerificationResponse | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const { accounts, selectedAccountId } = useAccountStore();
   const { user } = useUserStore();
@@ -130,7 +143,12 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
     e.preventDefault();
 
     if (!selectedAccountId) {
-      alert('계좌를 선택해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '계좌 선택 필요',
+        message: '계좌를 선택해주세요.'
+      });
       return;
     }
 
@@ -141,7 +159,12 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
 
     if (transferType === 'internal') {
       if (!selectedToAccountId && !selectedToAccountIsIrp) {
-        alert('입금할 계좌를 선택해주세요.');
+        setNotification({
+          isOpen: true,
+          type: 'warning',
+          title: '입금 계좌 선택 필요',
+          message: '입금할 계좌를 선택해주세요.'
+        });
         return;
       }
 
@@ -160,7 +183,8 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
             await onTransferComplete();
           }
 
-          alert('IRP 계좌 송금이 완료되었습니다!');
+          setCompleteMessage('IRP 계좌 송금이 완료되었습니다!');
+          setShowCompleteModal(true);
         } else {
           await internalTransfer({
             fromAccountId: selectedAccountId,
@@ -173,12 +197,16 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
             await onTransferComplete();
           }
 
-          alert('송금이 완료되었습니다!');
+          setCompleteMessage('송금이 완료되었습니다!');
+          setShowCompleteModal(true);
         }
-
-        onClose();
       } catch (error: any) {
-        alert(error.response?.data?.message || '송금 처리 중 오류가 발생했습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: '송금 실패',
+          message: error.response?.data?.message || '송금 처리 중 오류가 발생했습니다.'
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -186,12 +214,22 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
     }
 
     if (!verifiedAccount?.exists) {
-      alert('계좌번호를 정확히 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '계좌번호 오류',
+        message: '계좌번호를 정확히 입력해주세요.'
+      });
       return;
     }
 
     if (!recipientName.trim()) {
-      alert('받는 분 성함을 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '받는 분 성함 필요',
+        message: '받는 분 성함을 입력해주세요.'
+      });
       return;
     }
 
@@ -210,7 +248,8 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
           await onTransferComplete();
         }
 
-        alert('IRP 계좌 송금이 완료되었습니다!');
+        setCompleteMessage('IRP 계좌 송금이 완료되었습니다!');
+        setShowCompleteModal(true);
       } else {
         await externalTransfer({
           fromAccountId: selectedAccountId,
@@ -223,12 +262,16 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
           await onTransferComplete();
         }
 
-        alert('송금이 완료되었습니다!');
+        setCompleteMessage('송금이 완료되었습니다!');
+        setShowCompleteModal(true);
       }
-
-      onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || '송금 처리 중 오류가 발생했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '송금 실패',
+        message: error.response?.data?.message || '송금 처리 중 오류가 발생했습니다.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -796,6 +839,43 @@ function TransferModal({ onClose, onTransferComplete }: TransferModalProps) {
           </div>
         </div>
       )}
+
+      {}
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-hana-bold text-gray-900 mb-2">송금 완료</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                {completeMessage}
+              </p>
+              <button
+                onClick={() => {
+                  setShowCompleteModal(false);
+                  onClose();
+                }}
+                className="w-full bg-hana-green text-white py-3 px-4 rounded-lg font-hana-medium hover:bg-hana-green/80 transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

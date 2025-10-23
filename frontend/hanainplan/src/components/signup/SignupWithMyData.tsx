@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import MyDataConsentModal from '../modal/MyDataConsentModal';
+import NotificationModal from '../common/NotificationModal';
 
 interface SignupWithMyDataProps {
   onSignupComplete: (bankAccountInfo: any) => void;
@@ -16,12 +17,28 @@ const SignupWithMyData: React.FC<SignupWithMyDataProps> = ({
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [ci, setCi] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [socialNumber, setSocialNumber] = useState('');
-  const [name, setName] = useState('');
+  const [_socialNumber, _setSocialNumber] = useState('');
+  const [_name, _setName] = useState('');
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const handleSendVerificationCode = async () => {
     if (!phoneNumber) {
-      alert('휴대폰 번호를 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '휴대폰 번호 입력 필요',
+        message: '휴대폰 번호를 입력해주세요.'
+      });
       return;
     }
 
@@ -39,12 +56,27 @@ const SignupWithMyData: React.FC<SignupWithMyDataProps> = ({
 
       if (response.ok) {
         setIsCodeSent(true);
-        alert('인증번호가 발송되었습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: '인증번호 발송 완료',
+          message: '인증번호가 발송되었습니다.'
+        });
       } else {
-        alert('인증번호 발송에 실패했습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: '인증번호 발송 실패',
+          message: '인증번호 발송에 실패했습니다.'
+        });
       }
     } catch (error) {
-      alert('인증번호 발송에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '인증번호 발송 실패',
+        message: '인증번호 발송에 실패했습니다.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +84,12 @@ const SignupWithMyData: React.FC<SignupWithMyDataProps> = ({
 
   const handleVerifyCode = async () => {
     if (!verificationCode) {
-      alert('인증번호를 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '인증번호 입력 필요',
+        message: '인증번호를 입력해주세요.'
+      });
       return;
     }
 
@@ -70,15 +107,30 @@ const SignupWithMyData: React.FC<SignupWithMyDataProps> = ({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        // const _data = await response.json();
         setIsPhoneVerified(true);
         setSignupStep('identity');
-        alert('휴대폰 인증이 완료되었습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: '휴대폰 인증 완료',
+          message: '휴대폰 인증이 완료되었습니다.'
+        });
       } else {
-        alert('인증번호가 올바르지 않습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: '인증번호 오류',
+          message: '인증번호가 올바르지 않습니다.'
+        });
       }
     } catch (error) {
-      alert('인증번호 검증에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '인증번호 검증 실패',
+        message: '인증번호 검증에 실패했습니다.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,10 +155,20 @@ const SignupWithMyData: React.FC<SignupWithMyDataProps> = ({
         setSignupStep('mydata');
         setShowMyDataModal(true);
       } else {
-        alert('실명인증에 실패했습니다.');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: '실명인증 실패',
+          message: '실명인증에 실패했습니다.'
+        });
       }
     } catch (error) {
-      alert('실명인증에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '실명인증 실패',
+        message: '실명인증에 실패했습니다.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -251,10 +313,19 @@ const SignupWithMyData: React.FC<SignupWithMyDataProps> = ({
         onConsent={handleMyDataConsent}
         personalInfo={{
           phoneNumber: phoneNumber,
-          socialNumber: socialNumber,
-          name: name,
+          socialNumber: _socialNumber,
+          name: _name,
           ci: ci
         }}
+      />
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

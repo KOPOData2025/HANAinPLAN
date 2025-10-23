@@ -85,7 +85,7 @@ public class DepositSubscriptionService {
                 log.warn("tb_irp_account에서 IRP 계좌를 찾을 수 없습니다 - 계좌번호: {}", request.getIrpAccountNumber());
             }
 
-            String productName = request.getProductName() != null ? request.getProductName() : request.getDepositCode();
+            String productName = request.getProductName() != null ? request.getProductName() : "정기예금";
             saveIrpWithdrawalTransaction(irpAccount, request.getSubscriptionAmount(), 
                     user.getUserId(), request.getDepositCode(), productName);
 
@@ -276,7 +276,7 @@ public class DepositSubscriptionService {
         try {
             String portfolioProductName = request.getProductName() != null 
                     ? request.getProductName() 
-                    : request.getDepositCode() + " 정기예금";
+                    : "정기예금";
 
             DepositPortfolio portfolio = DepositPortfolio.builder()
                     .userId(user.getUserId())

@@ -2,6 +2,7 @@ package com.hanainplan.hana.account.controller;
 
 import com.hanainplan.hana.account.dto.AccountRequestDto;
 import com.hanainplan.hana.account.dto.AccountResponseDto;
+import com.hanainplan.hana.account.dto.TransactionRequestDto;
 import com.hanainplan.hana.account.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,39 @@ public class AccountController {
     public ResponseEntity<List<AccountResponseDto>> getAllAccounts() {
         List<AccountResponseDto> accounts = accountService.getAllAccounts();
         return ResponseEntity.ok(accounts);
+    }
+
+    @PostMapping("/transactions")
+    public ResponseEntity<Map<String, Object>> createTransaction(@Valid @RequestBody TransactionRequestDto request) {
+        log.info("하나은행 거래내역 생성 요청 - 계좌번호: {}, 거래유형: {}, 금액: {}원", 
+                request.getAccountNumber(), request.getTransactionType(), request.getAmount());
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String transactionId = accountService.createTransaction(request);
+
+            response.put("success", true);
+            response.put("message", "거래내역이 생성되었습니다");
+            response.put("transactionId", transactionId);
+            response.put("accountNumber", request.getAccountNumber());
+            response.put("transactionType", request.getTransactionType());
+            response.put("amount", request.getAmount());
+
+            log.info("하나은행 거래내역 생성 완료 - 거래ID: {}, 계좌번호: {}, 거래유형: {}, 금액: {}원", 
+                    transactionId, request.getAccountNumber(), request.getTransactionType(), request.getAmount());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (Exception e) {
+            log.error("하나은행 거래내역 생성 실패 - 계좌번호: {}, 오류: {}", request.getAccountNumber(), e.getMessage());
+
+            response.put("success", false);
+            response.put("message", "거래내역 생성 중 오류가 발생했습니다: " + e.getMessage());
+            response.put("accountNumber", request.getAccountNumber());
+
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @PostMapping("/withdrawal")

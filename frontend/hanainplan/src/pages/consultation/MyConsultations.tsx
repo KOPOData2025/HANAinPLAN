@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
+import NotificationModal from '../../components/common/NotificationModal';
 import { getCustomerConsultations, cancelConsultation, type ConsultationResponse } from '../../api/consultationApi';
 import { useUserStore } from '../../store/userStore';
 
@@ -11,6 +12,17 @@ function MyConsultations() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState<ConsultationResponse | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const { data: consultations = [], isLoading, error } = useQuery({
     queryKey: ['myConsultations', user?.userId],
@@ -30,7 +42,12 @@ function MyConsultations() {
       setShowSuccessModal(true);
     },
     onError: (error: Error) => {
-      alert(error.message || '상담 취소에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '상담 취소 실패',
+        message: error.message || '상담 취소에 실패했습니다.'
+      });
     },
   });
 
@@ -436,6 +453,15 @@ function MyConsultations() {
           </div>
         </div>
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

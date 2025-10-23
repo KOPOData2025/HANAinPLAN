@@ -44,7 +44,7 @@ function Step1UserTypeSelection({ selectedUserType, onUserTypeSelect }: Step1Pro
                 일반고객
               </h3>
               <p className="font-['Hana2.0_M'] text-sm text-gray-500 mt-1">
-                보험 상품을 찾고<br/>계시는 고객님
+                자산 관리를 원하는<br/>은퇴 준비자
               </p>
             </div>
 

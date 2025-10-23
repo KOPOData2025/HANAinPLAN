@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@FeignClient(name = "shinhan-bank", url = "${bank.shinhan.base-url:http://localhost:8083}")
+@FeignClient(name = "shinhan-bank", url = "${bank.shinhan.url:http://localhost:8082}")
 public interface ShinhanBankClient {
 
     @PostMapping("/api/shinhan/product/financial/subscribe")

@@ -21,13 +21,13 @@ public class BankWithdrawalService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${external.api.hana-bank.base-url:http://localhost:8081}")
+    @Value("${external.api.hana-bank.base-url:https://hana-production.up.railway.app}")
     private String hanaBankBaseUrl;
 
-    @Value("${external.api.kookmin-bank.base-url:http://localhost:8083}")
+    @Value("${external.api.kookmin-bank.base-url:https://kookmin-production.up.railway.app}")
     private String kookminBankBaseUrl;
 
-    @Value("${external.api.shinhan-bank.base-url:http://localhost:8082}")
+    @Value("${external.api.shinhan-bank.base-url:https://shinhan-production.up.railway.app}")
     private String shinhanBankBaseUrl;
 
     public BankWithdrawalResult processWithdrawal(String accountNumber, BigDecimal amount, String description) {

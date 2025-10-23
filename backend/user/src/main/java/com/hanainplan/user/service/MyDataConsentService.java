@@ -30,16 +30,16 @@ public class MyDataConsentService {
     private final RestTemplate restTemplate;
     private final CiConversionService ciConversionService;
 
-    @Value("${bank.hana.url:http://localhost:8081}")
+    @Value("${bank.hana.url:https://hana-production.up.railway.app}")
     private String hanaBankUrl;
 
-    @Value("${bank.shinhan.url:http://localhost:8082}")
+    @Value("${bank.shinhan.url:https://shinhan-production.up.railway.app}")
     private String shinhanBankUrl;
 
-    @Value("${bank.kookmin.url:http://localhost:8083}")
+    @Value("${bank.kookmin.url:https://kookmin-production.up.railway.app}")
     private String kookminBankUrl;
 
-    @Value("${hanainplan.url:http://localhost:8080}")
+    @Value("${hanainplan.url:https://hanainplan.kro.kr}")
     private String hanainplanUrl;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(3);

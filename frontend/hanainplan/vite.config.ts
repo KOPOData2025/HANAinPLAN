@@ -10,6 +10,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,  // HTTPS 활성화
+    allowedHosts: ['62fe0d5c933b13.lhr.life'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

@@ -1,6 +1,4 @@
-import { httpGet, httpPost } from '../lib/http';
-
-const BASE_URL = '/consultation';
+import { axiosInstance } from '../lib/axiosInstance';
 
 export interface ConsultationNote {
   noteId?: number;
@@ -20,16 +18,19 @@ export interface SaveConsultationNoteRequest {
 }
 
 export const saveConsultationNote = async (request: SaveConsultationNoteRequest): Promise<ConsultationNote> => {
-  return await httpPost<ConsultationNote>(`${BASE_URL}/notes`, request);
+  const response = await axiosInstance.post('/consultation/notes', request);
+  return response.data;
 };
 
 export const getConsultationNotes = async (consultId: string): Promise<ConsultationNote[]> => {
-  return await httpGet<ConsultationNote[]>(`${BASE_URL}/${consultId}/notes`);
+  const response = await axiosInstance.get(`/consultation/${consultId}/notes`);
+  return response.data;
 };
 
 export const getUserNote = async (consultId: string, userId: number, noteType: 'PERSONAL' | 'SHARED'): Promise<ConsultationNote | null> => {
   try {
-    return await httpGet<ConsultationNote>(`${BASE_URL}/${consultId}/notes/user/${userId}/type/${noteType}`);
+    const response = await axiosInstance.get(`/consultation/${consultId}/notes/user/${userId}/type/${noteType}`);
+    return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
       return null;
@@ -39,7 +40,8 @@ export const getUserNote = async (consultId: string, userId: number, noteType: '
 };
 
 export const getSharedNotes = async (consultId: string): Promise<ConsultationNote[]> => {
-  return await httpGet<ConsultationNote[]>(`${BASE_URL}/${consultId}/notes/shared`);
+  const response = await axiosInstance.get(`/consultation/${consultId}/notes/shared`);
+  return response.data;
 };
 
 export const getSharedNote = async (consultId: string): Promise<ConsultationNote | null> => {

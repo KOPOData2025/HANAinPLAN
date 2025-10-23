@@ -35,7 +35,7 @@ public class WebRTCSignalController {
     private final UserRepository userRepository;
     private final VideoCallRoomRepository videoCallRoomRepository;
 
-    @Value("${app.base-url:http://localhost:5173}")
+    @Value("${app.base-url:https://frontend-six-ecru-94.vercel.app}")
     private String baseUrl;
 
     public void notifyCallRequest(CallRequestMessage request, String roomId) {

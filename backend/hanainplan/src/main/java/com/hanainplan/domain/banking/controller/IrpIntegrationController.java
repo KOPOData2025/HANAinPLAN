@@ -4,6 +4,7 @@ import com.hanainplan.domain.banking.dto.IrpAccountDto;
 import com.hanainplan.domain.banking.dto.IrpAccountOpenRequestDto;
 import com.hanainplan.domain.banking.dto.IrpAccountOpenResponseDto;
 import com.hanainplan.domain.banking.dto.IrpAccountStatusResponseDto;
+import com.hanainplan.domain.banking.dto.IrpTaxBenefitDto;
 import com.hanainplan.domain.banking.service.IrpIntegrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -365,6 +366,28 @@ public class IrpIntegrationController {
                 "success", false,
                 "message", "계좌 비교 실패: " + e.getMessage()
             ));
+        }
+    }
+
+    @GetMapping("/tax-benefits/{customerId}")
+    @Operation(summary = "IRP 세제혜택 조회", 
+               description = "고객의 IRP 계좌 세제혜택을 3단계(납입/운용/수령)로 계산하여 반환합니다.")
+    public ResponseEntity<IrpTaxBenefitDto> getIrpTaxBenefits(
+            @Parameter(description = "고객 ID") @PathVariable Long customerId) {
+        
+        log.info("IRP 세제혜택 조회 API 호출 - 고객 ID: {}", customerId);
+        
+        try {
+            IrpTaxBenefitDto taxBenefits = irpTaxBenefitService.calculateComprehensiveTaxBenefit(customerId);
+            
+            log.info("IRP 세제혜택 조회 완료 - 고객 ID: {}, 세액공제액: {}, 과세이연혜택: {}", 
+                    customerId, taxBenefits.getTaxDeductionAmount(), taxBenefits.getTaxDeferredAmount());
+            
+            return ResponseEntity.ok(taxBenefits);
+            
+        } catch (Exception e) {
+            log.error("IRP 세제혜택 조회 실패 - 고객 ID: {}, 오류: {}", customerId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

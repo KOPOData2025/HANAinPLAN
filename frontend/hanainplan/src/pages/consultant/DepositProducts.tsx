@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
+import NotificationModal from '../../components/common/NotificationModal';
 import InterestRateComparison from '../../components/products/InterestRateComparison';
 import {
   getAllInterestRates,
@@ -9,6 +10,17 @@ import {
 function ConsultantDepositProducts() {
   const [interestRates, setInterestRates] = useState<InterestRateInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     fetchInterestRates();
@@ -20,7 +32,12 @@ function ConsultantDepositProducts() {
       const rates = await getAllInterestRates();
       setInterestRates(rates);
     } catch (error) {
-      alert('금리 정보 조회에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '금리 정보 조회 실패',
+        message: '금리 정보 조회에 실패했습니다.'
+      });
     } finally {
       setLoading(false);
     }
@@ -52,6 +69,15 @@ function ConsultantDepositProducts() {
           <InterestRateComparison rates={interestRates} />
         </div>
       </div>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

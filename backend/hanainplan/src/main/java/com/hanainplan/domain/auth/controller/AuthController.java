@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "인증 API", description = "로그인, 로그아웃 등 인증 관련 API")
+@CrossOrigin(origins = "https://frontend-six-ecru-94.vercel.app")
 public class AuthController {
 
     private final AuthService authService;

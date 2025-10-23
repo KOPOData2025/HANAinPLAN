@@ -5,7 +5,9 @@ import type { FundSubscription, FundTransaction, FundTransactionStats } from '..
 import { useUserStore } from '../store/userStore';
 import Layout from '../components/layout/Layout';
 import FundSellModal from '../components/fund/FundSellModal';
-import { formatAmount, formatUnits, formatPercent, formatReturnRate, getReturnColor, getReturnBgColor, getTransactionTypeColor } from '../utils/fundUtils';
+import NotificationModal from '../components/common/NotificationModal';
+import { formatAmount, formatUnits, formatReturnRate, getReturnColor, getReturnBgColor, getTransactionTypeColor } from '../utils/fundUtils';
+import { fundProductApi } from '../api/fundApi';
 
 type TabType = 'portfolio' | 'transactions';
 
@@ -23,19 +25,60 @@ const FundMy = () => {
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('ALL');
+  
+  // 펀드 클래스 정보를 저장할 상태
+  const [fundClassesMap, setFundClassesMap] = useState<Map<string, string>>(new Map());
 
   const [showSellModal, setShowSellModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<FundSubscription | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     if (!isLoggedIn || !user) {
-      alert('로그인이 필요합니다.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '로그인 필요',
+        message: '로그인이 필요합니다.'
+      });
       navigate('/login');
       return;
     }
+    loadFundClassesData();
     loadPortfolioData();
     loadTransactionsData();
   }, [isLoggedIn, user, navigate]);
+
+  // 펀드 클래스 정보가 로드되면 트랜잭션 데이터 다시 로드
+  useEffect(() => {
+    if (fundClassesMap.size > 0 && user?.userId) {
+      loadTransactionsData();
+    }
+  }, [fundClassesMap]);
+
+  // 펀드 클래스 정보 로드
+  const loadFundClassesData = async () => {
+    try {
+      const fundClasses = await fundProductApi.getAllFundClasses();
+      const map = new Map<string, string>();
+      fundClasses.forEach(fund => {
+        map.set(fund.childFundCd, fund.fundMaster.fundName);
+      });
+      setFundClassesMap(map);
+    } catch (error) {
+      console.error('펀드 클래스 정보 로드 실패:', error);
+    }
+  };
 
   const loadPortfolioData = async () => {
     try {
@@ -65,7 +108,14 @@ const FundMy = () => {
         fundTransactionApi.getUserTransactions(user.userId),
         fundTransactionApi.getTransactionStats(user.userId),
       ]);
-      setTransactions(transactionsData);
+      
+      // 트랜잭션 데이터에 펀드명 매핑
+      const mappedTransactions = transactionsData.map(tx => ({
+        ...tx,
+        fundName: tx.fundName || fundClassesMap.get(tx.childFundCd) || `펀드 ${tx.childFundCd}`
+      }));
+      
+      setTransactions(mappedTransactions);
       setStats(statsData);
       setTransactionsError(null);
     } catch (err) {
@@ -95,8 +145,7 @@ const FundMy = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {}
         <div className="mb-8">
-          <h1 className="text-3xl font-hana-bold text-gray-900 mb-2">나의 펀드</h1>
-          <p className="text-gray-600 font-hana-regular">보유 펀드와 거래 내역을 확인하세요</p>
+          <h1 className="text-3xl font-hana-bold text-gray-900 mb-2">{user?.name}님의 펀드 포트폴리오</h1>
         </div>
 
         {}
@@ -456,9 +505,6 @@ const FundMy = () => {
                                 <h3 className="text-lg font-hana-bold text-gray-900">
                                   {tx.fundName}
                                 </h3>
-                                <span className="text-sm text-gray-500 font-hana-regular">
-                                  {tx.classCode}클래스
-                                </span>
                               </div>
                               <p className="text-sm text-gray-600 font-hana-regular">
                                 거래일: {new Date(tx.transactionDate).toLocaleDateString('ko-KR')} |
@@ -510,12 +556,6 @@ const FundMy = () => {
                               </>
                             )}
                           </div>
-
-                          <div className="pt-4 border-t border-gray-200">
-                            <div className="text-xs text-gray-500 font-hana-regular">
-                              IRP 잔액: {formatAmount(tx.irpBalanceBefore)}원 → {formatAmount(tx.irpBalanceAfter)}원
-                            </div>
-                          </div>
                         </div>
                       ))
                     )}
@@ -542,6 +582,15 @@ const FundMy = () => {
           }}
         />
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 };

@@ -39,3 +39,23 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
   show-actuator: true
+
+# CoolSMS 설정
+coolsms:
+  api-key: ${COOLSMS_API_HEY}
+  api-secret: ${COOLSMS_API_SECRET}
+  from-number: ${COOLSMS_FROM}
+  test-number: "010-8965-0136"  # 실제 문자를 받을 하드코딩된 번호
+
+# 은행 서버 설정
+bank:
+  hana:
+    url: https://hana-production.up.railway.app
+  kookmin:
+    url: https://kookmin-production.up.railway.app
+  shinhan:
+    url: https://shinhan-production.up.railway.app
+
+# hanainplan 서버 설정
+hanainplan:
+  url: https://hanainplan.kro.kr

@@ -3,6 +3,8 @@ package com.hanainplan.domain.fund.scheduler;
 import com.hanainplan.domain.fund.service.FundNavCrawlerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +14,15 @@ import org.springframework.stereotype.Component;
 public class FundNavCrawlerScheduler {
 
     private final FundNavCrawlerService fundNavCrawlerService;
+
+    // 서버 시작 시 바로 크롤링 실행
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        log.info("====================================================");
+        log.info("서버 시작 시 펀드 기준가 크롤링 실행");
+        log.info("====================================================");
+        scheduleFundNavCrawl();
+    }
 
     @Scheduled(cron = "0 0 18 * * ?")
     public void scheduleFundNavCrawl() {

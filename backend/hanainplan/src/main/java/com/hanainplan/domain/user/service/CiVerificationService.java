@@ -12,7 +12,7 @@ public class CiVerificationService {
     @Autowired
     private RestTemplate restTemplate;
 
-    private static final String CI_SERVER_URL = "http://localhost:8084/api/user/ci/verify";
+    private static final String CI_SERVER_URL = "https://user-production-3188.up.railway.app/api/user/ci/verify";
 
     public CiVerificationResponseDto verifyCi(CiVerificationRequestDto request) {
         try {

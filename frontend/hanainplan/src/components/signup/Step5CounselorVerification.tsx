@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import NotificationModal from '../common/NotificationModal'
 import { extractDocumentInfo, verifyAllDocuments } from '../../services/ocrService'
 import type { ExtractedDocumentInfo, MergedCounselorInfo } from '../../services/ocrService'
 
@@ -38,6 +39,17 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
   const [isEditMode, setIsEditMode] = useState(false)
   const [editedInfos, setEditedInfos] = useState<{[key: string]: ExtractedDocumentInfo}>({})
   const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({})
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const handleInputChange = (field: keyof VerificationInfo, value: string | File[]) => {
     onVerificationInfoChange({
@@ -52,13 +64,23 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
 
   const handleFileUpload = async (docId: string, file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      alert('파일 크기는 10MB를 초과할 수 없습니다.')
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '파일 크기 초과',
+        message: '파일 크기는 10MB를 초과할 수 없습니다.'
+      });
       return
     }
 
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      alert('PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.')
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '파일 형식 오류',
+        message: 'PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.'
+      });
       return
     }
 
@@ -92,11 +114,21 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
           setIsEditMode(false)
           setShowModal(true)
         } else {
-          alert(`✅ 문서 분석 완료!\n\n추출된 정보:\n- 이름: ${info.name || 'N/A'}\n- 지점: ${info.branch_name || 'N/A'}\n- 직급: ${info.position || 'N/A'}`)
+          setNotification({
+            isOpen: true,
+            type: 'success',
+            title: '문서 분석 완료',
+            message: `추출된 정보:\n- 이름: ${info.name || 'N/A'}\n- 지점: ${info.branch_name || 'N/A'}\n- 직급: ${info.position || 'N/A'}`
+          });
         }
       }
     } catch (error) {
-      alert('문서 분석 중 오류가 발생했습니다. 수동으로 정보를 입력해주세요.')
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '문서 분석 실패',
+        message: '문서 분석 중 오류가 발생했습니다. 수동으로 정보를 입력해주세요.'
+      });
     } finally {
       setIsProcessing(false)
       setProcessingDoc(null)
@@ -150,7 +182,12 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
   const handleSaveEdit = () => {
     setExtractedInfos({ ...editedInfos })
     setIsEditMode(false)
-    alert('수정사항이 저장되었습니다.')
+    setNotification({
+      isOpen: true,
+      type: 'success',
+      title: '수정사항 저장 완료',
+      message: '수정사항이 저장되었습니다.'
+    });
   }
 
   const handleCancelEdit = () => {
@@ -160,17 +197,32 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
 
   const handleVerifyAllDocuments = async () => {
     if (Object.keys(uploadedDocs).length < 2) {
-      alert('재직증명서와 신분증을 모두 업로드해주세요.')
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '문서 업로드 필요',
+        message: '재직증명서와 신분증을 모두 업로드해주세요.'
+      });
       return
     }
 
     if (!uploadedDocs['employment_contract']) {
-      alert('재직증명서를 업로드해주세요.')
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '재직증명서 업로드 필요',
+        message: '재직증명서를 업로드해주세요.'
+      });
       return
     }
 
     if (!uploadedDocs['identity_verification']) {
-      alert('신분증을 업로드해주세요.')
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '신분증 업로드 필요',
+        message: '신분증을 업로드해주세요.'
+      });
       return
     }
 
@@ -196,10 +248,20 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
           handleInputChange('employeeId', merged.employee_id)
         }
 
-        alert(`✅ 전체 문서 검증 완료!\n\n추출된 정보:\n- 이름: ${merged.name || 'N/A'}\n- 성별: ${merged.gender || 'N/A'}\n- 주민번호 앞자리: ${merged.social_number_front || 'N/A'}\n- 직원번호: ${merged.employee_id || 'N/A'}\n- 지점: ${merged.branch_name || 'N/A'}\n- 부서: ${merged.department || 'N/A'}\n- 직급: ${merged.position || 'N/A'}`)
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: '전체 문서 검증 완료',
+          message: `추출된 정보:\n- 이름: ${merged.name || 'N/A'}\n- 성별: ${merged.gender || 'N/A'}\n- 주민번호 앞자리: ${merged.social_number_front || 'N/A'}\n- 직원번호: ${merged.employee_id || 'N/A'}\n- 지점: ${merged.branch_name || 'N/A'}\n- 부서: ${merged.department || 'N/A'}\n- 직급: ${merged.position || 'N/A'}`
+        });
       }
     } catch (error) {
-      alert('문서 검증 중 오류가 발생했습니다.')
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '문서 검증 실패',
+        message: '문서 검증 중 오류가 발생했습니다.'
+      });
     } finally {
       setIsProcessing(false)
     }
@@ -704,6 +766,15 @@ function Step5CounselorVerification({ verificationInfo, onVerificationInfoChange
           </div>
         </div>
       )}
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

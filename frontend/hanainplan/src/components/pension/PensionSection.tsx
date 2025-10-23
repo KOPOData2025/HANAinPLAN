@@ -43,7 +43,7 @@ function PensionSection() {
   const calculatePension = () => {
     const currentAge = parseInt(formData.currentAge)
     const retirementAge = parseInt(formData.retirementAge)
-    const currentSalary = parseInt(formData.currentSalary) * 10000
+    // const _currentSalary = parseInt(formData.currentSalary) * 10000
     const currentAssets = parseInt(formData.currentAssets) * 10000
     const monthlyContribution = parseInt(formData.monthlyContribution) * 10000
     const expectedReturn = parseFloat(formData.expectedReturn) / 100

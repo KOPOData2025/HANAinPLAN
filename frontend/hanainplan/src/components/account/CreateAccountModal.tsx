@@ -104,9 +104,18 @@ function CreateAccountModal({ isOpen, onClose, userId, onAccountCreated }: Creat
       setIsSubmitting(true);
       setError(null);
 
+      const accountTypeMap: Record<string, number> = {
+        'CHECKING': 1,
+        'SAVINGS': 2,
+        'TIME_DEPOSIT': 3,
+        'FIXED_DEPOSIT': 4,
+        'LOAN': 5,
+        'CREDIT': 6
+      };
+
       const request: CreateAccountRequest = {
         userId,
-        accountType: formData.accountType,
+        accountType: accountTypeMap[formData.accountType],
         accountName: formData.accountName.trim(),
         initialBalance: 0,
         description: formData.description.trim() || undefined,

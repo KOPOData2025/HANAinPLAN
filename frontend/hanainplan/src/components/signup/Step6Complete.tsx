@@ -5,7 +5,7 @@ interface Step6CompleteProps {
   userName?: string;
 }
 
-function Step6Complete({ userType, userName }: Step6CompleteProps) {
+function Step6Complete({ userType: _userType, userName }: Step6CompleteProps) {
   const [showAnimation, setShowAnimation] = useState(false)
 
   useEffect(() => {

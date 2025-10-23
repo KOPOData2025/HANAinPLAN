@@ -1,6 +1,4 @@
-import { httpGet, httpPatch, httpDelete } from '../lib/http';
-
-const BASE_URL = '/notifications';
+import { axiosInstance } from '../lib/axiosInstance';
 
 const getCurrentUserId = (): number | null => {
   try {
@@ -35,7 +33,10 @@ export const fetchNotifications = async (page: number = 0, size: number = 20): P
     const params: any = { page, size };
     if (userId) params.userId = userId;
 
-    return await httpGet<{ content: Notification[]; totalElements: number; totalPages: number }>(BASE_URL, params);
+    const response = await axiosInstance.get(`/notifications`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -46,7 +47,10 @@ export const fetchUnreadNotifications = async (page: number = 0, size: number = 
     const params: any = { page, size };
     if (userId) params.userId = userId;
 
-    return await httpGet<{ content: Notification[]; totalElements: number; totalPages: number }>(`${BASE_URL}/unread`, params);
+    const response = await axiosInstance.get(`/notifications/unread`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -54,7 +58,10 @@ export const fetchUnreadNotifications = async (page: number = 0, size: number = 
 
 export const fetchNotificationSummary = async (userId?: number): Promise<NotificationSummary> => {
   try {
-    return await httpGet<NotificationSummary>(`${BASE_URL}/summary`, userId ? { userId } : {});
+    const response = await axiosInstance.get(`/notifications/summary`, {
+      params: userId ? { userId } : {}
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -67,7 +74,10 @@ export const fetchNotificationsByType = async (type: NotificationType, page: num
     const params: any = { page, size };
     if (userId) params.userId = userId;
 
-    return await httpGet<{ content: Notification[]; totalElements: number; totalPages: number }>(`${BASE_URL}/type/${type}`, params);
+    const response = await axiosInstance.get(`/notifications/type/${type}`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -85,7 +95,10 @@ export const fetchNotificationsByPeriod = async (
     const params: any = { startDate, endDate, page, size };
     if (userId) params.userId = userId;
 
-    return await httpGet<{ content: Notification[]; totalElements: number; totalPages: number }>(`${BASE_URL}/period`, params);
+    const response = await axiosInstance.get(`/notifications/period`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -98,7 +111,10 @@ export const fetchNotification = async (notificationId: number): Promise<Notific
     const params: any = {};
     if (userId) params.userId = userId;
 
-    return await httpGet<Notification>(`${BASE_URL}/${notificationId}`, params);
+    const response = await axiosInstance.get(`/notifications/${notificationId}`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -111,7 +127,10 @@ export const markNotificationAsRead = async (notificationId: number): Promise<No
     const params: any = {};
     if (userId) params.userId = userId;
 
-    return await httpPatch<Notification>(`${BASE_URL}/${notificationId}/read`, null, { params });
+    const response = await axiosInstance.patch(`/notifications/${notificationId}/read`, null, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -124,7 +143,10 @@ export const markAllNotificationsAsRead = async (): Promise<{ success: boolean; 
     const params: any = {};
     if (userId) params.userId = userId;
 
-    return await httpPatch<{ success: boolean; message: string }>(`${BASE_URL}/read-all`, null, { params });
+    const response = await axiosInstance.patch(`/notifications/read-all`, null, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -137,7 +159,10 @@ export const markAllNotificationsAsReadByType = async (type: NotificationType): 
     const params: any = {};
     if (userId) params.userId = userId;
 
-    return await httpPatch<{ success: boolean; message: string }>(`${BASE_URL}/type/${type}/read-all`, null, { params });
+    const response = await axiosInstance.patch(`/notifications/type/${type}/read-all`, null, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -150,7 +175,10 @@ export const deleteNotification = async (notificationId: number): Promise<{ succ
     const params: any = {};
     if (userId) params.userId = userId;
 
-    return await httpDelete<{ success: boolean; message: string }>(`${BASE_URL}/${notificationId}`, params);
+    const response = await axiosInstance.delete(`/notifications/${notificationId}`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -163,7 +191,11 @@ export const deleteNotifications = async (notificationIds: number[]): Promise<{ 
     const params: any = { ids: notificationIds };
     if (userId) params.userId = userId;
 
-    return await httpDelete<{ success: boolean; message: string }>(`${BASE_URL}/batch`, params);
+    const response = await axiosInstance.delete(`/notifications/batch`, {
+      params,
+      data: notificationIds
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -176,7 +208,10 @@ export const cleanupOldNotifications = async (): Promise<{ success: boolean; mes
     const params: any = {};
     if (userId) params.userId = userId;
 
-    return await httpDelete<{ success: boolean; message: string }>(`${BASE_URL}/cleanup`, params);
+    const response = await axiosInstance.delete(`/notifications/cleanup`, {
+      params
+    });
+    return response.data;
   } catch (error) {
     throw error;
   }

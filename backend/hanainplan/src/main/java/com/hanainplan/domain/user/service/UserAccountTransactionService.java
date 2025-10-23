@@ -2,6 +2,7 @@ package com.hanainplan.domain.user.service;
 
 import com.hanainplan.domain.banking.dto.AccountDto;
 import com.hanainplan.domain.banking.service.MyDataAccountService;
+import com.hanainplan.domain.banking.service.TransactionSyncService;
 import com.hanainplan.domain.user.dto.CustomerAccountInfoDto;
 import com.hanainplan.domain.user.dto.MyDataConsentRequestDto;
 import com.hanainplan.domain.user.dto.MyDataConsentResponseDto;
@@ -22,6 +23,7 @@ import java.util.List;
 public class UserAccountTransactionService {
 
     private final MyDataAccountService myDataAccountService;
+        private final TransactionSyncService transactionSyncService;
 
     @Transactional
     public MyDataConsentResponseDto processUserAndAccountData(
@@ -83,6 +85,13 @@ public class UserAccountTransactionService {
                 if (!allAccounts.isEmpty()) {
                     savedAccounts = myDataAccountService.saveMyDataAccounts(userId, customerCi, allAccounts);
                     log.info("계좌 정보 저장 완료 - 저장된 계좌 수: {}", savedAccounts.size());
+
+                    try {
+                        int synced = transactionSyncService.syncAllTransactionsByUser(userId);
+                        log.info("거래내역 동기화 완료 - 사용자 ID: {}, 동기화 건수: {}", userId, synced);
+                    } catch (Exception e) {
+                        log.warn("거래내역 동기화 중 오류 - 사용자 ID: {}, 오류: {}", userId, e.getMessage());
+                    }
                 }
             }
 
@@ -105,6 +114,15 @@ public class UserAccountTransactionService {
             response.setTotalAccounts(totalAccounts);
 
             log.info("사용자 및 계좌 정보 통합 저장 완료 - 사용자 ID: {}, 저장된 계좌 수: {}", userId, savedAccounts.size());
+
+            // 거래내역 동기화 실행
+            try {
+                int syncedTransactionCount = transactionSyncService.syncAllTransactionsByUser(userId);
+                log.info("마이데이터 통합 후 거래내역 동기화 완료 - 사용자 ID: {}, 동기화된 거래내역 수: {}", userId, syncedTransactionCount);
+            } catch (Exception e) {
+                log.error("거래내역 동기화 실패 - 사용자 ID: {}", userId, e);
+                // 거래내역 동기화 실패는 전체 프로세스를 중단시키지 않음
+            }
 
             return response;
 

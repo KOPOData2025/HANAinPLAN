@@ -18,6 +18,25 @@ export default {
         'hana-green': '#008485',
         'hana-light-green': '#E8F5F4',
       },
+      animation: {
+        'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
+        'fade-in': 'fade-in 0.5s ease-in-out',
+        'slide-up': 'slide-up 0.3s ease-out',
+      },
+      keyframes: {
+        'bounce-gentle': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0px)' },
+        },
+        'slide-up': {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0px)' },
+        },
+      },
     },
   },
   plugins: [

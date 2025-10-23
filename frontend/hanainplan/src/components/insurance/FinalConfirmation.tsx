@@ -3,8 +3,6 @@ import { submitInsuranceApplication } from '../../api/insuranceApi';
 import type {
   InsuranceProduct,
   InsuranceApplication,
-  PersonalInfo,
-  InsuranceDetails,
   PremiumCalculationResponse,
   PaymentInfo
 } from '../../types/insurance';
@@ -73,7 +71,11 @@ const FinalConfirmation: React.FC<FinalConfirmationProps> = ({
         paymentInfo: paymentInfo,
         agreementInfo: {
           ...application.agreementInfo!,
-          finalAgreement: finalAgreement
+          termsAgreed: finalAgreement,
+          privacyAgreed: finalAgreement,
+          marketingAgreed: finalAgreement,
+          medicalDisclosureAgreed: finalAgreement,
+          agreementDate: new Date().toISOString()
         },
         status: 'SUBMITTED',
         applicationDate: new Date().toISOString()

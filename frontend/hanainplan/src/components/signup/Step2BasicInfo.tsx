@@ -18,15 +18,15 @@ interface Step2Props {
   isValid: boolean
 }
 
-function Step2BasicInfo({ signUpData, onDataChange, isValid }: Step2Props) {
+function Step2BasicInfo({ signUpData, onDataChange, isValid: _isValid }: Step2Props) {
   const [isCodeSent, setIsCodeSent] = useState(false)
   const [isPhoneFocused, setIsPhoneFocused] = useState(false)
   const [isCodeFocused, setIsCodeFocused] = useState(false)
   const [isNameFocused, setIsNameFocused] = useState(false)
-  const [isSocialFocused, setIsSocialFocused] = useState(false)
+  const [_isSocialFocused, setIsSocialFocused] = useState(false)
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const [timeLeft, setTimeLeft] = useState(0)
-  const [isVerified, setIsVerified] = useState(false)
+  const [_isVerified, setIsVerified] = useState(false)
   const [isCiVerified, setIsCiVerified] = useState(false)
   const [isCiVerificationLoading, setIsCiVerificationLoading] = useState(false)
 

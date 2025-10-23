@@ -1,26 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
+import NotificationModal from '../../components/common/NotificationModal';
 import { fetchAvailableConsultantsAtTime } from '../../api/scheduleApi';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-interface Counselor {
-  consultantId: number;
-  userName: string;
-  department: string;
-  position: string;
-  branchName: string;
-  specialization: string;
-  consultationRating: number;
-  totalConsultations: number;
-  workEmail: string;
-  phoneNumber: string;
-  experienceYears: string;
-  consultationStatus: string;
-  workStatus: string;
-}
+import { getConsultants, type Counselor } from '../../api/consultationApi';
 
 const parseSpecialization = (specialization: string | null): string[] => {
   if (!specialization) return [];
@@ -39,18 +22,31 @@ function ConsultationStaff() {
   const [availableConsultantIds, setAvailableConsultantIds] = useState<number[]>([]);
   const [isFilterActive, setIsFilterActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const { data: consultants = [], isLoading: consultantsLoading } = useQuery({
     queryKey: ['consultants'],
-    queryFn: async () => {
-      const response = await axios.get<Counselor[]>(`${API_BASE_URL}/api/consultants`);
-      return response.data;
-    }
+    queryFn: getConsultants
   });
 
   const handleSearchAvailability = async () => {
     if (!selectedDate || !selectedTime) {
-      alert('날짜와 시간을 선택해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '날짜와 시간 선택 필요',
+        message: '날짜와 시간을 선택해주세요.'
+      });
       return;
     }
 
@@ -66,7 +62,12 @@ function ConsultationStaff() {
       setAvailableConsultantIds(availableIds);
       setIsFilterActive(true);
     } catch (error) {
-      alert('상담사 조회에 실패했습니다.');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '상담사 조회 실패',
+        message: '상담사 조회에 실패했습니다.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -102,23 +103,6 @@ function ConsultationStaff() {
 
         {}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {}
-          <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
-            <h2 className="text-3xl font-hana-bold text-gray-900 mb-4">전문 상담사와 함께하세요</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              하나금융그룹의 숙련된 전문 상담사들이 고객님의 금융 목표 달성을 위해 맞춤형 상담을 제공해드립니다.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-hana-green/5 p-6 rounded-lg">
-                <h3 className="text-xl font-hana-bold text-hana-green mb-3">전문성</h3>
-                <p className="text-gray-700">풍부한 경력과 전문 자격을 보유한 상담사</p>
-              </div>
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <h3 className="text-xl font-hana-bold text-blue-600 mb-3">맞춤 상담</h3>
-                <p className="text-gray-700">고객의 상황과 목표에 맞는 개인별 상담</p>
-              </div>
-            </div>
-          </div>
 
           {}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -408,6 +392,15 @@ function ConsultationStaff() {
           );
         })()}
       </div>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      />
     </Layout>
   );
 }

@@ -3,6 +3,7 @@ import type { FundSubscription, FundRedemptionRequest } from '../../types/fund.t
 import { fundSubscriptionApi } from '../../api/fundApi';
 import { useUserStore } from '../../store/userStore';
 import { formatAmount, formatUnits } from '../../utils/fundUtils';
+import NotificationModal from '../common/NotificationModal';
 
 interface FundSellModalProps {
   isOpen: boolean;
@@ -20,6 +21,17 @@ const FundSellModal = ({ isOpen, onClose, subscription, onSuccess }: FundSellMod
   const [estimatedAmount, setEstimatedAmount] = useState<number>(0);
   const [estimatedFee, setEstimatedFee] = useState<number>(0);
   const [estimatedProfit, setEstimatedProfit] = useState<number>(0);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     calculateEstimates();
@@ -51,24 +63,44 @@ const FundSellModal = ({ isOpen, onClose, subscription, onSuccess }: FundSellMod
 
   const handleSell = async () => {
     if (!subscription || !sellUnits) {
-      alert('매도 좌수를 입력해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '입력 오류',
+        message: '매도 좌수를 입력해주세요.'
+      });
       return;
     }
 
     if (!user) {
-      alert('로그인이 필요합니다.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '로그인 필요',
+        message: '로그인이 필요합니다.'
+      });
       return;
     }
 
     const units = Number(sellUnits);
 
     if (units <= 0 || units > subscription.currentUnits) {
-      alert(`매도 가능한 좌수는 0 ~ ${subscription.currentUnits.toFixed(6)}좌입니다.`);
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '매도 좌수 오류',
+        message: `매도 가능한 좌수는 0 ~ ${subscription.currentUnits.toFixed(6)}좌입니다.`
+      });
       return;
     }
 
     if (!agreedToRisks) {
-      alert('환매 유의사항에 동의해주세요.');
+      setNotification({
+        isOpen: true,
+        type: 'warning',
+        title: '동의 필요',
+        message: '환매 유의사항에 동의해주세요.'
+      });
       return;
     }
 
@@ -83,17 +115,44 @@ const FundSellModal = ({ isOpen, onClose, subscription, onSuccess }: FundSellMod
 
       const response = await fundSubscriptionApi.redeemFund(request);
 
+      console.log('펀드 매도 API 응답:', response);
+
       if (response.success) {
-        alert(`펀드 매도가 완료되었습니다!\n\n매도 좌수: ${response.sellUnits?.toFixed(6)}좌\n결제일: ${response.settlementDate}`);
+        console.log('매도 성공 - 알림 모달 표시');
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: '매도 완료',
+          message: `펀드 매도가 완료되었습니다!\n\n매도 좌수: ${response.sellUnits?.toFixed(6)}좌\n결제일: ${response.settlementDate}`
+        });
+        console.log('알림 상태 설정됨:', {
+          isOpen: true,
+          type: 'success',
+          title: '매도 완료'
+        });
         setSellUnits('');
         setAgreedToRisks(false);
-        onClose();
-        if (onSuccess) onSuccess();
+        
+        // 성공 모달을 먼저 표시한 후 모달 닫기
+        setTimeout(() => {
+          onClose();
+          if (onSuccess) onSuccess();
+        }, 2000); // 2초 후 모달 닫기
       } else {
-        alert(`펀드 매도 실패: ${response.errorMessage}`);
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: '매도 실패',
+          message: `펀드 매도 실패: ${response.errorMessage}`
+        });
       }
     } catch (err: any) {
-      alert(`펀드 매도 중 오류가 발생했습니다: ${err.message}`);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: '오류 발생',
+        message: `펀드 매도 중 오류가 발생했습니다: ${err.message}`
+      });
     } finally {
       setSelling(false);
     }
@@ -273,6 +332,15 @@ const FundSellModal = ({ isOpen, onClose, subscription, onSuccess }: FundSellMod
           </button>
         </div>
       </div>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 };
